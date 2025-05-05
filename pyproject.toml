@@ -1,0 +1,16 @@
+[project]
+name = "buergeramt"
+version = "0.1.0"
+description = "Bürgeramt Adventure: Schenkungssteuer Edition - a text adventure game about German bureaucracy with AI bureaucrats."
+authors = [
+    { name = "Your Name", email = "your@email.com" }
+]
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "openai>=1.0.0",
+    "python-dotenv"
+]
+
+[project.scripts]
+buergeramt = "src.buergeramt_adventure:run"
