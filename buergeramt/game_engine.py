@@ -39,9 +39,9 @@ class GameEngine:
             return
 
         # use AI characters
-        from buergeramt.characters.HerrSchmidt import HerrSchmidt
-        from buergeramt.characters.FrauMueller import FrauMueller
-        from buergeramt.characters.HerrWeber import HerrWeber
+        from buergeramt.characters.herr_schmidt import HerrSchmidt
+        from buergeramt.characters.frau_mueller import FrauMueller
+        from buergeramt.characters.herr_weber import HerrWeber
 
         try:
             self.bureaucrats = {
