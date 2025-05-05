@@ -4,7 +4,7 @@ from typing import Tuple
 
 from openai import OpenAI
 
-from buergeramt.game_rules import DOCUMENTS
+from buergeramt.rules.documents import DOCUMENTS
 
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 

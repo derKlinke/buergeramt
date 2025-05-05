@@ -3,11 +3,8 @@ import sys
 import time
 from typing import List
 
-
-from .game_rules import DOCUMENTS, EVIDENCE, PROCEDURES, GameState
-
-# AI character import is deferred to runtime in __init__
-AI_AVAILABLE = False
+from buergeramt.rules import *
+from buergeramt.characters import *
 
 
 class GameEngine:
@@ -15,33 +12,9 @@ class GameEngine:
 
     def __init__(self, use_ai_characters: bool = True):
         self.game_state = GameState()
-        self.game_state.game_rules = sys.modules[__package__ + ".game_rules"]  # Pass rules module to game state
 
         # Always use AI characters by default
         self.use_ai_characters = True
-
-        # Initialize bureaucrats: prefer AI if available, fallback to rule-based
-        # check AI module availability and API key
-        try:
-            from buergeramt.characters import ai_characters
-        except ImportError:
-            print("WARNUNG: AI-Module konnten nicht geladen werden. Das Spiel kann nicht gestartet werden.")
-            print("Bitte installiere 'openai' und die lokalen KI-Charaktere.")
-            self.game_over = True
-            return
-        # ensure API key is set
-        client = ai_characters.client
-        if not getattr(client, "api_key", None):
-            print(
-                "WARNUNG: OpenAI API key nicht gefunden. Bitte setzen Sie OPENAI_API_KEY oder geben Sie --api-key an."
-            )
-            self.game_over = True
-            return
-
-        # use AI characters
-        from buergeramt.characters.herr_schmidt import HerrSchmidt
-        from buergeramt.characters.frau_mueller import FrauMueller
-        from buergeramt.characters.herr_weber import HerrWeber
 
         try:
             self.bureaucrats = {
