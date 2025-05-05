@@ -1,6 +1,6 @@
 import random
 
-from buergeramt.characters.ai_characters import Bureaucrat
+from buergeramt.characters.bureaucrat import Bureaucrat
 
 
 class HerrWeber(Bureaucrat):
