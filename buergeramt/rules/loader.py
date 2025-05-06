@@ -34,7 +34,17 @@ def load_config() -> GameConfig:
         # parse examples
         examples: List[PersonaExample] = [PersonaExample(**ex) for ex in data.get("examples", [])]
         attrs = {k: v for k, v in data.items() if k != "examples"}
-        pers[persona_id] = Persona(id=persona_id, examples=examples, **attrs)
+        persona = Persona(id=persona_id, examples=examples, **attrs)
+
+        # Fail if required fields are missing
+        missing = []
+        for field in ["name", "role", "department", "personality", "handled_documents", "required_evidence", "examples", "system_prompt_template", "behavioral_rules"]:
+            if getattr(persona, field, None) is None:
+                missing.append(field)
+        if missing:
+            raise ValueError(f"Persona '{persona_id}' is missing required fields: {', '.join(missing)}")
+
+        pers[persona_id] = persona
 
     # build config
     config = GameConfig(documents=docs, evidence=evs, procedures=procs, personas=pers)
