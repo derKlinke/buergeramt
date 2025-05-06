@@ -220,7 +220,11 @@ personas:
     department: "Erstbearbeitung"
     system_prompt_template: |
       ## ROLE: {name}, {role}, Deutsche Finanzamtsbehörde (Abteilung {department})
-      ...
+      ## YOUR PERSONALITY
+      {personality}
+      ## GAME CONTEXT
+      - Your department issues: {handled_documents}
+      - Required evidence: {required_evidence}
     personality:
       - Extremely precise and detail-oriented
       - Speak in complex bureaucratic German
@@ -240,7 +244,11 @@ personas:
     department: "Abschlussstelle"
     system_prompt_template: |
       ## ROLE: {name}, {role}, Deutsche Finanzamtsbehörde (Abteilung {department})
-      ...
+      ## YOUR PERSONALITY
+      {personality}
+      ## GAME CONTEXT
+      - Your department issues: {handled_documents}
+      - Required evidence: {required_evidence}
     personality:
       - Very friendly, apologetic, sympathetic
       - No decision-making power

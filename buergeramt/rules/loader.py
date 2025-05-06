@@ -38,7 +38,17 @@ def load_config() -> GameConfig:
 
         # Fail if required fields are missing
         missing = []
-        for field in ["name", "role", "department", "personality", "handled_documents", "required_evidence", "examples", "system_prompt_template", "behavioral_rules"]:
+        for field in [
+            "name",
+            "role",
+            "department",
+            "personality",
+            "handled_documents",
+            "required_evidence",
+            "examples",
+            "system_prompt_template",
+            "behavioral_rules",
+        ]:
             if getattr(persona, field, None) is None:
                 missing.append(field)
         if missing:
