@@ -66,7 +66,9 @@ class HerrSchmidt(Bureaucrat):
         super().__init__("Herr Schmidt", "Oberamtsrat", "Erstbearbeitung", system_prompt, examples)
 
     def _fallback_response(self, query, game_state):
-        """Fallback responses in Herr Schmidt style"""
+        """Fallback responses in Herr Schmidt style (returns AgentResponse)"""
+        from buergeramt.characters.bureaucrat import (AgentActions)
+        from buergeramt.characters.agent_response import AgentResponse
         responses = [
             f"Gemäß Paragraph {random.randint(10, 99)} der Abgabenordnung muss ich Sie auf die korrekte Einreichungsreihenfolge hinweisen. Bitte besorgen Sie zunächst das Formular S-100 und verfassen Sie eine detaillierte Dokumentation gemäß Verwaltungsvorschrift 132/B.",
             "Ihre Anfrage kann nicht bearbeitet werden, da die erforderlichen Beglaubigungen fehlen. Konsultieren Sie bitte die Richtlinie 45-B der Schenkungssteuerverordnung und reichen Sie die Unterlagen erneut ein.",
@@ -74,7 +76,18 @@ class HerrSchmidt(Bureaucrat):
             "Bedauerlicherweise ist Ihr Antrag aufgrund formaler Mängel abzulehnen. Die Nummerierung der Anlagen entspricht nicht den Vorgaben der Verwaltungsvorschrift 112.3. Eine erneute Einreichung mit korrekter Formatierung ist erforderlich.",
             "Die eingereichten Dokumente entsprechen nicht dem in Paragraph 23, Absatz 5, Satz 3 vorgeschriebenen Format. Bitte beachten Sie insbesondere die Vorgaben zur Zeilenabständen und Randformatierung.",
         ]
-        return random.choice(responses)
+        return AgentResponse(
+            response_text=random.choice(responses),
+            actions=AgentActions(
+                intent="other",
+                document=None,
+                requirements_met=None,
+                evidence=None,
+                department=None,
+                valid=True,
+                message="",
+            ),
+        )
 
     def _fallback_hint(self, game_state):
         """Fallback hint if API fails"""

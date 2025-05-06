@@ -67,7 +67,9 @@ class FrauMueller(Bureaucrat):
         super().__init__("Frau Müller", "Sachbearbeiterin", "Fachprüfung", system_prompt, examples)
 
     def _fallback_response(self, query, game_state):
-        """Fallback responses in Frau Müller style"""
+        """Fallback responses in Frau Müller style (returns AgentResponse)"""
+        from buergeramt.characters.bureaucrat import (AgentActions)
+        from buergeramt.characters.agent_response import AgentResponse
         time_phrases = [
             "Wir haben gleich Mittagspause!",
             "Meine Sprechzeit endet in 5 Minuten!",
@@ -83,7 +85,18 @@ class FrauMueller(Bureaucrat):
             "Ohne vollständige SV-Bescheinigung geht gar nichts! System fast down! Morgen wiederkommen!",
             "ZA kann erst nach BA erfolgen! Jedes Kind weiß das! 10-11 Uhr morgen, nur mit Termin! NÄCHSTER!",
         ]
-        return random.choice(responses)
+        return AgentResponse(
+            response_text=random.choice(responses),
+            actions=AgentActions(
+                intent="other",
+                document=None,
+                requirements_met=None,
+                evidence=None,
+                department=None,
+                valid=True,
+                message="",
+            ),
+        )
 
     def _fallback_hint(self, game_state):
         """Fallback hint if API fails"""

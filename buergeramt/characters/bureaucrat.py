@@ -1,7 +1,5 @@
-
-from pydantic import BaseModel
-
-from buergeramt.characters.ai_agent import OpenAIAgent
+from buergeramt.characters.agent_response import AgentResponse
+from buergeramt.characters.agent import Agent
 from buergeramt.characters.context_manager import ContextManager
 from buergeramt.characters.message_builder import MessageBuilder
 
@@ -14,7 +12,7 @@ class Bureaucrat:
         self.system_prompt = system_prompt
         self.example_interactions = example_interactions or []
         self.context_manager = ContextManager()
-        self.agent = OpenAIAgent(api_key=api_key)
+        self.agent = Agent(api_key=api_key)
         self.message_builder = MessageBuilder(self.system_prompt, self.example_interactions, self.context_manager)
         print(f"Using {self.agent.get_model()} for {name}")
 
@@ -25,8 +23,6 @@ class Bureaucrat:
         stage_guidance = self._get_stage_guidance(game_state)
         return self.message_builder.build(query, game_state, stage_guidance=stage_guidance)
 
-
-
     def _get_stage_guidance(self, game_state):
         """Get guidance based on current game stage"""
         # No documents yet
@@ -35,91 +31,64 @@ class Bureaucrat:
 
         # Has Schenkungsanmeldung but no Wertermittlung
         if (
-            "Schenkungsanmeldung" in game_state.collected_documents
-            and "Wertermittlung" not in game_state.collected_documents
+                "Schenkungsanmeldung" in game_state.collected_documents
+                and "Wertermittlung" not in game_state.collected_documents
         ):
             return "The user has the initial application but needs valuation. As Fachprüfung, you should request market comparison and expert opinion."
 
         # Has Wertermittlung but no Freibetragsbescheinigung
         if (
-            "Wertermittlung" in game_state.collected_documents
-            and "Freibetragsbescheinigung" not in game_state.collected_documents
+                "Wertermittlung" in game_state.collected_documents
+                and "Freibetragsbescheinigung" not in game_state.collected_documents
         ):
             return "The user has valuation but needs exemption certificate. As Abschlussstelle, you should ask for relationship proof and previous gifts."
 
         # Has most documents but not final one
         if (
-            "Freibetragsbescheinigung" in game_state.collected_documents
-            and "Zahlungsaufforderung" not in game_state.collected_documents
+                "Freibetragsbescheinigung" in game_state.collected_documents
+                and "Zahlungsaufforderung" not in game_state.collected_documents
         ):
             return "The user is in the final stage and needs payment request. Return to Erstbearbeitung for final processing."
 
         return None
 
-    class ValidationStep(BaseModel):
-        explanation: str
-        output: str
-
-    class UserInputValidation(BaseModel):
-        valid: bool
-        message: str
-        intent: str | None = None
-        document: str | None = None
-        evidence: list[str] = []
-        steps: list['Bureaucrat.ValidationStep'] = []
-
-    def _validate_input(self, text: str, game_state) -> 'Bureaucrat.UserInputValidation':
+    def respond(self, query, game_state) -> AgentResponse:
+        """
+        Respond to user input and return structured output for the game engine to process.
+        Output is always an AgentResponse instance (enforced by pydantic).
+        """
         if not self.agent.has_api_key():
-            return Bureaucrat.UserInputValidation(valid=True, message="", intent=None, document=None, evidence=[], steps=[])
-
-        persona_prompt = self.system_prompt.strip()
-        game_state_info = self.message_builder._format_game_state(game_state)
-        validation_instruction = (
-            "Bevor du antwortest, prüfe die Nutzereingabe nach folgenden Regeln: "
-            "- Ist die Anfrage höflich und vollständig? "
-            "- Ist sie relevant für die aktuelle Spielsituation? "
-            "- Enthält sie einen klaren Bezug zu Dokumenten, Formularen oder Beweismitteln? "
-            "Gib eine strukturierte Analyse im folgenden Format zurück: "
-            "UserInputValidation(valid: bool, message: str, intent: str | None, document: str | None, evidence: list[str], steps: list[ValidationStep]) "
-            "Jeder Schritt in steps sollte eine kurze Erklärung und das jeweilige Zwischenergebnis enthalten. "
-            "Mögliche Werte für intent: 'request_document', 'provide_evidence', 'greeting', 'other'. "
-            "Lasse 'document' und 'evidence' leer, falls nicht relevant."
-        )
-        validation_prompt = f"{persona_prompt}\n\n{validation_instruction}\n\nAktueller Spielstand: {game_state_info}\nNutzereingabe: '{text}'"
-        try:
-            completion = self.agent.client.beta.chat.completions.parse(
-                model=self.agent.get_model(),
-                messages=[{"role": "system", "content": validation_prompt}],
-                response_format=Bureaucrat.UserInputValidation,
-                temperature=0
-            )
-            validation = completion.choices[0].message.parsed
-            return validation
-        except Exception:
-            return Bureaucrat.UserInputValidation(valid=True, message="", intent=None, document=None, evidence=[], steps=[])
-
-    def respond(self, query, game_state):
-        validation = self._validate_input(query, game_state)
-        # Use Pydantic model fields, not dict access
-        if not validation.valid:
-            return validation.message
-        try:
-            if not self.agent.has_api_key():
-                return self._fallback_response(query, game_state)
-            messages = self.build_messages(query, game_state)
-            messages.append({
-                "role": "system",
-                "content": f"Strukturiertes Analyseergebnis der Nutzereingabe: {validation.model_dump_json()}"
-            })
-            response = self.agent.chat(messages)
-            ai_response = response.choices[0].message.content.strip()
-            self.context_manager.add_exchange(query, ai_response)
-            return ai_response
-        except Exception as e:
-            print(f"API Error: {e}")
             return self._fallback_response(query, game_state)
 
-    # navigation to other agents is intentionally not supported in this Bureaucrat class
+        from buergeramt.characters.bureaucrat import AgentResponse
+
+        system_instruction = (
+            "You are a bureaucratic AI agent in a German administrative adventure game. "
+            "Analyze the user's input in the context of the current game state. "
+            "Always respond with a JSON object in the following format: "
+            "{ 'response_text': <text>, 'actions': { 'intent': <intent>, 'document': <document>, "
+            "'requirements_met': <bool>, 'evidence': <list>, 'department': <str>, 'valid': <bool>, 'message': <str> } } "
+            "Possible values for intent: 'request_document', 'provide_evidence', 'switch_department', 'greeting', 'other'. "
+            "If the user requests a document, check if all requirements are met and set 'requirements_met' accordingly. "
+            "If the user provides evidence, list it in 'evidence'. "
+            "If the user wants to switch department, set 'department'. "
+            "If the input is invalid or incomplete, set 'valid' to false and explain in 'message'. "
+            "Keep 'response_text' as your in-character reply to the user. "
+            "If a field is not relevant, set it to null or an empty list."
+        )
+        game_state_info = self.message_builder._format_game_state(game_state)
+        user_msg = {"role": "user", "content": f"Eingabe: '{query}'\nAktueller Spielstand: {game_state_info}"}
+        try:
+            messages = [{"role": "system", "content": system_instruction}, user_msg]
+            completion = self.agent.chat_structured(
+                messages=messages, response_format=AgentResponse, max_tokens=200, temperature=0
+            )
+            agent_response = completion.choices[0].message.parsed
+            self.context_manager.add_exchange(query, agent_response.response_text)
+            return agent_response
+        except Exception as e:
+            print(f"API Error (structured): {e}")
+            return self._fallback_response(query, game_state)
 
     def give_hint(self, game_state):
         try:
@@ -134,18 +103,26 @@ class Bureaucrat:
             Based on your bureaucratic personality, what hint would you give?
             Keep it brief (1-2 sentences) and in character.
             """
-            response = self.agent.chat([
-                {"role": "user", "content": prompt}
-            ], max_tokens=100, temperature=0.7)
+            response = self.agent.chat([{"role": "user", "content": prompt}], max_tokens=100, temperature=0.7)
             return response.choices[0].message.content.strip()
         except Exception as e:
             print(f"API Error in give_hint: {e}")
             return self._fallback_hint(game_state)
 
-    def _fallback_response(self, query, game_state):
+    def _fallback_response(self, query, game_state) -> "AgentResponse":
         """Fallback response if API fails"""
-        # Each subclass should implement this
-        return "Es tut mir leid, das System ist momentan nicht verfügbar."
+        return Bureaucrat.AgentResponse(
+            response_text="Es tut mir leid, das System ist momentan nicht verfügbar.",
+            actions=Bureaucrat.AgentActions(
+                intent="other",
+                document=None,
+                requirements_met=None,
+                evidence=None,
+                department=None,
+                valid=True,
+                message="",
+            ),
+        )
 
     def _fallback_hint(self, game_state):
         """Fallback hint if API fails"""

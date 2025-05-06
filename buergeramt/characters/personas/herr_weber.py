@@ -66,7 +66,9 @@ class HerrWeber(Bureaucrat):
         super().__init__("Herr Weber", "Verwaltungsangestellter", "Abschlussstelle", system_prompt, examples)
 
     def _fallback_response(self, query, game_state):
-        """Fallback responses in Herr Weber style"""
+        """Fallback responses in Herr Weber style (returns AgentResponse)"""
+        from buergeramt.characters.bureaucrat import (AgentActions)
+        from buergeramt.characters.agent_response import AgentResponse
         polite_phrases = [
             "Ich würde Ihnen wirklich gerne helfen, aber...",
             "Es tut mir aufrichtig leid, aber leider...",
@@ -94,9 +96,31 @@ class HerrWeber(Bureaucrat):
                 "Ich sollte das nicht sagen, aber: Machen Sie zuerst die Wertermittlung bei Frau Müller, bevor Sie zu Herrn Schmidt gehen - das spart Ihnen mindestens einen Behördengang.",
                 "Psst! Die Freibetragsbescheinigung können Sie auch online beantragen unter www.finanzamt-online.de - das wissen nur die wenigsten!",
             ]
-            return f"Ich sehe wie frustriert Sie sind! {random.choice(hints)} Aber bitte erwähnen Sie nicht, dass Sie das von mir haben, ja? Ich würde wirklich gerne mehr helfen können!"
+            return AgentResponse(
+                response_text=f"Ich sehe wie frustriert Sie sind! {random.choice(hints)} Aber bitte erwähnen Sie nicht, dass Sie das von mir haben, ja? Ich würde wirklich gerne mehr helfen können!",
+                actions=AgentActions(
+                    intent="other",
+                    document=None,
+                    requirements_met=None,
+                    evidence=None,
+                    department=None,
+                    valid=True,
+                    message="",
+                ),
+            )
 
-        return f"{polite_phrases[game_state.attempts % len(polite_phrases)]} {excuses[game_state.attempts % len(excuses)]}. Vielleicht könnte Ihnen Herr Schmidt in der Erstbearbeitung weiterhelfen? Er ist zwar etwas streng, aber sehr kompetent."
+        return AgentResponse(
+            response_text=f"{polite_phrases[game_state.attempts % len(polite_phrases)]} {excuses[game_state.attempts % len(excuses)]}. Vielleicht könnte Ihnen Herr Schmidt in der Erstbearbeitung weiterhelfen? Er ist zwar etwas streng, aber sehr kompetent.",
+            actions=AgentActions(
+                intent="other",
+                document=None,
+                requirements_met=None,
+                evidence=None,
+                department=None,
+                valid=True,
+                message="",
+            ),
+        )
 
     def _fallback_hint(self, game_state):
         """Fallback hint if API fails"""
