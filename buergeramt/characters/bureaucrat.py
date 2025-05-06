@@ -19,10 +19,6 @@ class Bureaucrat:
     def introduce(self) -> str:
         return f"Mein Name ist {self.name}, {self.title} der Abteilung {self.department}."
 
-    def build_messages(self, query, game_state):
-        stage_guidance = self._get_stage_guidance(game_state)
-        return self.message_builder.build(query, game_state, stage_guidance=stage_guidance)
-
     def _get_stage_guidance(self, game_state):
         """Get guidance based on current game stage"""
         # No documents yet
@@ -89,6 +85,7 @@ class Bureaucrat:
             print(f"API Error (structured): {e}")
             raise RuntimeError("AI agent failed to respond.")
 
+    # TODO: implement this somewhere
     def give_hint(self, game_state):
         if not self.agent.has_api_key():
             raise RuntimeError("AI agent is not available: missing API key.")
