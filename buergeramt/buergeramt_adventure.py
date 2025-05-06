@@ -49,8 +49,10 @@ def setup_api_key():
     return True
 
 
-def setup_commands():
-    # --- CommandManager setup ---
+
+
+# --- CommandManager setup ---
+def setup_commands(game):
     command_manager = CommandManager()
 
     def cmd_hilfe(arg=None):
@@ -69,8 +71,8 @@ def setup_commands():
 
     def agent_suggestions():
         # Suggest agent names from the game engine (use bureaucrat names)
-        if hasattr(game, 'bureaucrats'):
-            return [b.name for b in game.bureaucrats.values()]
+        if hasattr(game, 'agent_router'):
+            return [b.name for b in game.agent_router.get_bureaucrats().values()]
         return []
 
     def cmd_gehe_zu(arg):
@@ -114,7 +116,7 @@ def main():
         return
     game.start_game()
 
-    command_manager = setup_commands()
+    command_manager = setup_commands(game)
 
     # Main game loop with slash command support
     while not game.game_over:

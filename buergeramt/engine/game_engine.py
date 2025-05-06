@@ -3,6 +3,7 @@ import time
 from typing import List
 
 from buergeramt.characters import *
+from buergeramt.engine.agent_router import AgentRouter
 from buergeramt.rules import *
 
 
@@ -11,28 +12,15 @@ class GameEngine:
 
     def __init__(self, use_ai_characters: bool = True):
         self.game_state = GameState()
-
-        # Always use AI characters by default
         self.use_ai_characters = True
-
         try:
-            self.bureaucrats = {
-                "Erstbearbeitung": HerrSchmidt(),
-                "Fachprüfung": FrauMueller(),
-                "Abschlussstelle": HerrWeber(),
-            }
+            self.agent_router = AgentRouter(self.game_state)
             print("Bürokratensimulation mit KI-Charakteren gestartet. Viel Erfolg!")
         except Exception as e:
             print(f"Fehler beim Initialisieren der KI-Charaktere: {e}")
             print("Das Spiel kann nicht gestartet werden.")
             self.game_over = True
             return
-
-        # Set the active bureaucrat
-        self.active_bureaucrat = self.bureaucrats["Erstbearbeitung"]
-        self.game_state.current_department = "Erstbearbeitung"
-
-        # Game flow tracking
         self.game_over = False
         self.win_condition = False
 
@@ -67,7 +55,7 @@ class GameEngine:
         time.sleep(1)
 
         # First bureaucrat introduces themselves
-        self._print_styled(f"\n{self.active_bureaucrat.introduce()}", "bureaucrat")
+        self._print_styled(f"\n{self.agent_router.get_active_bureaucrat().introduce()}", "bureaucrat")
         self._print_styled("Wie kann ich Ihnen behilflich sein?", "bureaucrat")
 
     def show_help(self):
@@ -83,7 +71,7 @@ class GameEngine:
 
         self._print_styled("\nAktuelle Informationen:", "normal")
         self._print_styled(f"• Sie sind derzeit in der Abteilung: {self.game_state.current_department}", "info")
-        self._print_styled(f"• Ihr aktueller Beamter ist: {self.active_bureaucrat.name}", "info")
+        self._print_styled(f"• Ihr aktueller Beamter ist: {self.agent_router.get_active_bureaucrat().name}", "info")
 
         # Show collected documents
         if self.game_state.collected_documents:
@@ -104,39 +92,7 @@ class GameEngine:
         self._suggest_next_step()
 
     def switch_agent(self, agent_name: str) -> bool:
-        """Public method to switch to a different agent/department by agent name. Returns True if successful."""
-        # Normalize input for matching
-        name = agent_name.strip().lower()
-        # Map possible names to departments
-        name_to_dept = {
-            "herr schmidt": "Erstbearbeitung",
-            "schmidt": "Erstbearbeitung",
-            "erstbearbeitung": "Erstbearbeitung",
-            "frau müller": "Fachprüfung",
-            "mueller": "Fachprüfung",
-            "müller": "Fachprüfung",
-            "fachprüfung": "Fachprüfung",
-            "herr weber": "Abschlussstelle",
-            "weber": "Abschlussstelle",
-            "abschlussstelle": "Abschlussstelle",
-        }
-        # Try to match
-        for key, dept in name_to_dept.items():
-            if key in name:
-                if dept == self.game_state.current_department:
-                    self._print_styled("\nSie sind bereits in dieser Abteilung.", "italic")
-                    return True
-                self._transition_to_department(dept)
-                return True
-        # Fallback: try direct department match
-        for dept in self.bureaucrats:
-            if dept.lower() in name:
-                if dept == self.game_state.current_department:
-                    self._print_styled("\nSie sind bereits in dieser Abteilung.", "italic")
-                    return True
-                self._transition_to_department(dept)
-                return True
-        return False
+        return self.agent_router.switch_agent(agent_name, print_styled=self._print_styled)
 
     def _suggest_next_step(self):
         """Suggest what the player should do next based on their progress"""
@@ -263,7 +219,7 @@ class GameEngine:
 
         # Get structured response from the active bureaucrat
 
-        agent_result = self.active_bureaucrat.respond(user_input, self.game_state)
+        agent_result = self.agent_router.get_active_bureaucrat().respond(user_input, self.game_state)
         # Always expect an AgentResponse object
         response_text = agent_result.response_text
         actions = agent_result.actions
@@ -344,14 +300,15 @@ class GameEngine:
         ]
 
         interruption, description = random.choice(interruptions)
-        self._print_styled(f"\n{self.active_bureaucrat.name}: {interruption}", "bureaucrat")
+        bureaucrat = self.agent_router.get_active_bureaucrat()
+        self._print_styled(f"\n{bureaucrat.name}: {interruption}", "bureaucrat")
         self._print_styled(description, "italic")
 
         time.sleep(2)  # Dramatic pause
 
         # 30% chance to actually change departments after an interruption
         if random.random() < 0.3:
-            options = [dept for dept in self.bureaucrats.keys() if dept != self.game_state.current_department]
+            options = [dept for dept in self.agent_router.get_bureaucrats().keys() if dept != self.game_state.current_department]
             target_dept = random.choice(options)
             reason = random.choice(
                 [
@@ -363,44 +320,21 @@ class GameEngine:
                 ]
             )
 
+            bureaucrat = self.agent_router.get_active_bureaucrat()
             self._print_styled(
-                f"\n{self.active_bureaucrat.name}: Sie müssen zur Abteilung {target_dept}, {reason}.", "bureaucrat"
+                f"\n{bureaucrat.name}: Sie müssen zur Abteilung {target_dept}, {reason}.", "bureaucrat"
             )
             self._transition_to_department(target_dept)
         else:
             self._print_styled("\nWir können jetzt fortfahren.", "bureaucrat")
 
-    def _transition_to_department(self, department: str):
-        """Transition the player to a new department"""
-        if department == self.game_state.current_department:
-            self._print_styled("\nSie sind bereits in dieser Abteilung.", "italic")
-            return
-
-        # Show transition text
-        self._print_styled(f"\nSie verlassen das Büro von {self.active_bureaucrat.name}...", "italic")
-        time.sleep(1)
-        self._print_styled(f"Sie gehen zum Büro der Abteilung {department}...", "italic")
-        time.sleep(1)
-
-        # Update game state
-        self.game_state.current_department = department
-        self.active_bureaucrat = self.bureaucrats[department]
-
-        # New bureaucrat introduces themselves
-        self._print_styled(f"\n{self.active_bureaucrat.introduce()}", "bureaucrat")
-
-        # Bureaucrat mentions something about the player's current state
-        if len(self.game_state.collected_documents) > 0:
-            doc_list = ", ".join(list(self.game_state.collected_documents.keys()))
-            self._print_styled(f"Ich sehe, Sie haben bereits folgende Dokumente: {doc_list}.", "bureaucrat")
-        else:
-            self._print_styled("Was kann ich für Sie tun?", "bureaucrat")
+    # _transition_to_department is now handled by AgentRouter
 
     def _process_document_acquisition(self, document_names: List[str]):
         """Process the player attempting to acquire documents"""
         for document_name in document_names:
             # Check if the player meets the requirements
-            can_receive, reason = self.active_bureaucrat.check_requirements(document_name, self.game_state)
+            can_receive, reason = self.agent_router.get_active_bureaucrat().check_requirements(document_name, self.game_state)
 
             if can_receive:
                 self._print_styled(f"\nSie erhalten das Dokument '{document_name}'!", "success")
@@ -530,7 +464,7 @@ class GameEngine:
 
         # If no logical redirect determined, choose randomly
         if target_dept is None:
-            options = [dept for dept in self.bureaucrats.keys() if dept != current_dept]
+            options = [dept for dept in self.agent_router.get_bureaucrats().keys() if dept != current_dept]
             target_dept = random.choice(options)
             reasons = [
                 "für eine zusätzliche Unterschrift",
@@ -549,7 +483,7 @@ class GameEngine:
     def _redirect_player(self):
         """Redirect the player to another department"""
         current = self.game_state.current_department
-        departments = list(self.bureaucrats.keys())
+        departments = list(self.agent_router.get_bureaucrats().keys())
 
         # Remove current department from options
         departments.remove(current)
@@ -564,12 +498,10 @@ class GameEngine:
         self._print_styled(f"\nWegen {reason} müssen Sie zur Abteilung {new_department}!", "bureaucrat")
         self._print_styled(f"\nSie gehen zum Büro der Abteilung {new_department}...", "italic")
 
-        # Update game state
-        self.game_state.current_department = new_department
-        self.active_bureaucrat = self.bureaucrats[new_department]
-
-        # New bureaucrat introduces themselves
-        self._print_styled(f"\n{self.active_bureaucrat.introduce()}", "bureaucrat")
+        # Update game state and switch bureaucrat using AgentRouter
+        self.agent_router.transition_to_department(new_department, print_styled=self._print_styled)
+        bureaucrat = self.agent_router.get_active_bureaucrat()
+        self._print_styled(f"\n{bureaucrat.introduce()}", "bureaucrat")
         self._print_styled("Was kann ich für Sie tun?", "bureaucrat")
 
     def _process_loop(self, loop):
@@ -587,11 +519,9 @@ class GameEngine:
 
         # Determine if department should change
         if random.random() < 0.7:
-            self.game_state.current_department = department
-            self.active_bureaucrat = self.bureaucrats[department]
-
-            # New bureaucrat introduces themselves
-            self._print_styled(f"\n{self.active_bureaucrat.introduce()}", "bureaucrat")
+            self.agent_router.transition_to_department(department, print_styled=self._print_styled)
+            bureaucrat = self.agent_router.get_active_bureaucrat()
+            self._print_styled(f"\n{bureaucrat.introduce()}", "bureaucrat")
             self._print_styled("Was führt Sie zu mir?", "bureaucrat")
 
         # Increase frustration
@@ -604,7 +534,7 @@ class GameEngine:
     def _handle_document_request(self, document_name: str):
         """Handle a request for a specific document"""
         # Check if the player meets the requirements
-        can_receive, reason = self.active_bureaucrat.check_requirements(document_name, self.game_state)
+        can_receive, reason = self.agent_router.get_active_bureaucrat().check_requirements(document_name, self.game_state)
 
         if can_receive:
             self._print_styled(f"\nSie haben das Dokument '{document_name}' erhalten!", "success")
