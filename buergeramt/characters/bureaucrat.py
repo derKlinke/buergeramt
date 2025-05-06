@@ -1,5 +1,5 @@
-from buergeramt.characters.agent_response import AgentResponse
 from buergeramt.characters.agent import Agent
+from buergeramt.characters.agent_response import AgentResponse
 from buergeramt.characters.context_manager import ContextManager
 from buergeramt.characters.message_builder import MessageBuilder
 
@@ -54,13 +54,12 @@ class Bureaucrat:
 
     def respond(self, query, game_state) -> AgentResponse:
         """
-        Respond to user input and return structured output for the game engine to process.
-        Output is always an AgentResponse instance (enforced by pydantic).
+        respond to user input and return structured output for the game engine to process.
+        output is always an AgentResponse instance (enforced by pydantic).
+        if the agent cannot respond (e.g. no api key or error), raise an exception.
         """
         if not self.agent.has_api_key():
-            return self._fallback_response(query, game_state)
-
-        from buergeramt.characters.bureaucrat import AgentResponse
+            raise RuntimeError("AI agent is not available: missing API key.")
 
         system_instruction = (
             "You are a bureaucratic AI agent in a German administrative adventure game. "
@@ -88,43 +87,23 @@ class Bureaucrat:
             return agent_response
         except Exception as e:
             print(f"API Error (structured): {e}")
-            return self._fallback_response(query, game_state)
+            raise RuntimeError("AI agent failed to respond.")
 
     def give_hint(self, game_state):
+        if not self.agent.has_api_key():
+            raise RuntimeError("AI agent is not available: missing API key.")
+        state_info = self.message_builder._format_game_state(game_state)
+        prompt = f"""
+        As {self.name}, provide a hint to the user about their next steps.
+
+        Game state: {state_info}
+
+        Based on your bureaucratic personality, what hint would you give?
+        Keep it brief (1-2 sentences) and in character.
+        """
         try:
-            if not self.agent.has_api_key():
-                return self._fallback_hint(game_state)
-            state_info = self.message_builder._format_game_state(game_state)
-            prompt = f"""
-            As {self.name}, provide a hint to the user about their next steps.
-
-            Game state: {state_info}
-
-            Based on your bureaucratic personality, what hint would you give?
-            Keep it brief (1-2 sentences) and in character.
-            """
             response = self.agent.chat([{"role": "user", "content": prompt}], max_tokens=100, temperature=0.7)
             return response.choices[0].message.content.strip()
         except Exception as e:
             print(f"API Error in give_hint: {e}")
-            return self._fallback_hint(game_state)
-
-    def _fallback_response(self, query, game_state) -> "AgentResponse":
-        """Fallback response if API fails"""
-        return Bureaucrat.AgentResponse(
-            response_text="Es tut mir leid, das System ist momentan nicht verfügbar.",
-            actions=Bureaucrat.AgentActions(
-                intent="other",
-                document=None,
-                requirements_met=None,
-                evidence=None,
-                department=None,
-                valid=True,
-                message="",
-            ),
-        )
-
-    def _fallback_hint(self, game_state):
-        """Fallback hint if API fails"""
-        # Each subclass should implement this
-        return "Vielleicht sollten Sie einen anderen Beamten aufsuchen."
+            raise RuntimeError("AI agent failed to provide a hint.")

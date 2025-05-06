@@ -1,4 +1,3 @@
-import random
 
 from buergeramt.characters.bureaucrat import Bureaucrat
 
@@ -65,54 +64,3 @@ class FrauMueller(Bureaucrat):
         ]
 
         super().__init__("Frau Müller", "Sachbearbeiterin", "Fachprüfung", system_prompt, examples)
-
-    def _fallback_response(self, query, game_state):
-        """Fallback responses in Frau Müller style (returns AgentResponse)"""
-        from buergeramt.characters.bureaucrat import (AgentActions)
-        from buergeramt.characters.agent_response import AgentResponse
-        time_phrases = [
-            "Wir haben gleich Mittagspause!",
-            "Meine Sprechzeit endet in 5 Minuten!",
-            "Ich bin gleich im Feierabend!",
-            "Der Computer fährt gerade runter!",
-            "Das System ist gleich down für Wartung!",
-        ]
-
-        responses = [
-            f"{time_phrases[game_state.attempts % len(time_phrases)]} Brauchen zuerst StNr vom Amt und dann FB-Formular von Erstbearbeitung! Kommen Sie morgen wieder, 10-11 Uhr!",
-            "Falsche Abteilung! Erstbearbeitung ist zuständig! Nicht ich! Nächster bitte!",
-            f"SchSt ohne WE-Gutachten? Unmöglich! Zurück zur Erstbearbeitung! {time_phrases[game_state.attempts % len(time_phrases)]}",
-            "Ohne vollständige SV-Bescheinigung geht gar nichts! System fast down! Morgen wiederkommen!",
-            "ZA kann erst nach BA erfolgen! Jedes Kind weiß das! 10-11 Uhr morgen, nur mit Termin! NÄCHSTER!",
-        ]
-        return AgentResponse(
-            response_text=random.choice(responses),
-            actions=AgentActions(
-                intent="other",
-                document=None,
-                requirements_met=None,
-                evidence=None,
-                department=None,
-                valid=True,
-                message="",
-            ),
-        )
-
-    def _fallback_hint(self, game_state):
-        """Fallback hint if API fails"""
-        time_phrases = [
-            "Gleich Mittagspause!",
-            "Fast Feierabend!",
-            "Computer fährt runter!",
-            "Sprechzeit endet!",
-            "System gleich down!",
-        ]
-
-        hints = [
-            f"{time_phrases[game_state.attempts % len(time_phrases)]} Schnell! Holen Sie MktVgl und SV-Gutachten für WE-Antrag!",
-            f"Brauchen FB33-Formular von Erstbearbeitung - vorher sinnlos hier! {time_phrases[game_state.attempts % len(time_phrases)]}",
-            "WE ohne vollständige Unterlagen? Unmöglich! Zurück zu Schmidt!",
-            f"{time_phrases[game_state.attempts % len(time_phrases)]} Erst Formular S-100, dann hier WE, dann Abschluss! Reihenfolge!",
-            "Kommen Sie morgen 10-11 Uhr mit ALLEN Unterlagen! Verstanden? NÄCHSTER!",
-        ]
-        return random.choice(hints)

@@ -7,40 +7,6 @@ from buergeramt.rules import *
 
 
 class GameEngine:
-    def switch_agent(self, agent_name: str) -> bool:
-        """Public method to switch to a different agent/department by agent name. Returns True if successful."""
-        # Normalize input for matching
-        name = agent_name.strip().lower()
-        # Map possible names to departments
-        name_to_dept = {
-            "herr schmidt": "Erstbearbeitung",
-            "schmidt": "Erstbearbeitung",
-            "erstbearbeitung": "Erstbearbeitung",
-            "frau müller": "Fachprüfung",
-            "mueller": "Fachprüfung",
-            "müller": "Fachprüfung",
-            "fachprüfung": "Fachprüfung",
-            "herr weber": "Abschlussstelle",
-            "weber": "Abschlussstelle",
-            "abschlussstelle": "Abschlussstelle",
-        }
-        # Try to match
-        for key, dept in name_to_dept.items():
-            if key in name:
-                if dept == self.game_state.current_department:
-                    self._print_styled("\nSie sind bereits in dieser Abteilung.", "italic")
-                    return True
-                self._transition_to_department(dept)
-                return True
-        # Fallback: try direct department match
-        for dept in self.bureaucrats:
-            if dept.lower() in name:
-                if dept == self.game_state.current_department:
-                    self._print_styled("\nSie sind bereits in dieser Abteilung.", "italic")
-                    return True
-                self._transition_to_department(dept)
-                return True
-        return False
     """Main game engine class handling the game loop and state"""
 
     def __init__(self, use_ai_characters: bool = True):
@@ -85,8 +51,11 @@ class GameEngine:
 
         self._print_styled("• Wechseln Sie zwischen Abteilungen mit Befehlen wie 'Ich möchte zu Herrn Weber'", "hint")
         self._print_styled("• Drücken Sie Ihre Frustration aus, wenn Sie möchten", "hint")
-        self._print_styled("• Fragen Sie nach konkreten Dokumenten wie 'Schenkungsanmeldung' oder 'Wertermittlung'", "hint")
-        self._print_styled("• Nutzen Sie Slash-Befehle wie /hilfe, /status, /beenden oder /gehe_zu <Name> für wichtige Aktionen", "hint")
+        self._print_styled("• Fragen Sie nach konkreten Dokumenten wie 'Schenkungsanmeldung' oder 'Wertermittlung'",
+                           "hint")
+        self._print_styled(
+            "• Nutzen Sie Slash-Befehle wie /hilfe, /status, /beenden oder /gehe_zu <Name> für wichtige Aktionen",
+            "hint")
 
         # Show an example
         self._print_styled(
@@ -134,6 +103,41 @@ class GameEngine:
         self._print_styled("\nVorschlag für den nächsten Schritt:", "normal")
         self._suggest_next_step()
 
+    def switch_agent(self, agent_name: str) -> bool:
+        """Public method to switch to a different agent/department by agent name. Returns True if successful."""
+        # Normalize input for matching
+        name = agent_name.strip().lower()
+        # Map possible names to departments
+        name_to_dept = {
+            "herr schmidt": "Erstbearbeitung",
+            "schmidt": "Erstbearbeitung",
+            "erstbearbeitung": "Erstbearbeitung",
+            "frau müller": "Fachprüfung",
+            "mueller": "Fachprüfung",
+            "müller": "Fachprüfung",
+            "fachprüfung": "Fachprüfung",
+            "herr weber": "Abschlussstelle",
+            "weber": "Abschlussstelle",
+            "abschlussstelle": "Abschlussstelle",
+        }
+        # Try to match
+        for key, dept in name_to_dept.items():
+            if key in name:
+                if dept == self.game_state.current_department:
+                    self._print_styled("\nSie sind bereits in dieser Abteilung.", "italic")
+                    return True
+                self._transition_to_department(dept)
+                return True
+        # Fallback: try direct department match
+        for dept in self.bureaucrats:
+            if dept.lower() in name:
+                if dept == self.game_state.current_department:
+                    self._print_styled("\nSie sind bereits in dieser Abteilung.", "italic")
+                    return True
+                self._transition_to_department(dept)
+                return True
+        return False
+
     def _suggest_next_step(self):
         """Suggest what the player should do next based on their progress"""
         # If player has no evidence yet
@@ -148,8 +152,8 @@ class GameEngine:
         if not self.game_state.collected_documents:
             if self.game_state.current_department == "Erstbearbeitung":
                 if (
-                    "valid_id" in self.game_state.evidence_provided
-                    and "gift_details" in self.game_state.evidence_provided
+                        "valid_id" in self.game_state.evidence_provided
+                        and "gift_details" in self.game_state.evidence_provided
                 ):
                     self._print_styled(
                         "Fragen Sie nach der Schenkungsanmeldung: 'Ich möchte eine Schenkungsanmeldung beantragen'",
@@ -168,8 +172,8 @@ class GameEngine:
 
         # If player has Schenkungsanmeldung but no Wertermittlung
         if (
-            "Schenkungsanmeldung" in self.game_state.collected_documents
-            and "Wertermittlung" not in self.game_state.collected_documents
+                "Schenkungsanmeldung" in self.game_state.collected_documents
+                and "Wertermittlung" not in self.game_state.collected_documents
         ):
             if self.game_state.current_department != "Fachprüfung":
                 self._print_styled("Gehen Sie zur Abteilung Fachprüfung: 'Ich möchte zu Frau Müller'", "hint")
@@ -181,8 +185,8 @@ class GameEngine:
                 if "expert_opinion" not in self.game_state.evidence_provided:
                     self._print_styled("Reichen Sie ein Wertgutachten ein: 'Hier ist mein Wertgutachten'", "hint")
                 if (
-                    "market_comparison" in self.game_state.evidence_provided
-                    and "expert_opinion" in self.game_state.evidence_provided
+                        "market_comparison" in self.game_state.evidence_provided
+                        and "expert_opinion" in self.game_state.evidence_provided
                 ):
                     self._print_styled(
                         "Fragen Sie nach der Wertermittlung: 'Kann ich jetzt die Wertermittlung bekommen?'", "hint"
@@ -191,8 +195,8 @@ class GameEngine:
 
         # If player has Wertermittlung but no Freibetragsbescheinigung
         if (
-            "Wertermittlung" in self.game_state.collected_documents
-            and "Freibetragsbescheinigung" not in self.game_state.collected_documents
+                "Wertermittlung" in self.game_state.collected_documents
+                and "Freibetragsbescheinigung" not in self.game_state.collected_documents
         ):
             if self.game_state.current_department != "Abschlussstelle":
                 self._print_styled("Gehen Sie zur Abteilung Abschlussstelle: 'Ich möchte zu Herrn Weber'", "hint")
@@ -216,8 +220,8 @@ class GameEngine:
 
         # If player has most documents but not Zahlungsaufforderung
         if (
-            "Freibetragsbescheinigung" in self.game_state.collected_documents
-            and "Zahlungsaufforderung" not in self.game_state.collected_documents
+                "Freibetragsbescheinigung" in self.game_state.collected_documents
+                and "Zahlungsaufforderung" not in self.game_state.collected_documents
         ):
             if self.game_state.current_department != "Erstbearbeitung":
                 self._print_styled("Gehen Sie zurück zur Erstbearbeitung: 'Ich möchte zu Herrn Schmidt'", "hint")
@@ -484,8 +488,8 @@ class GameEngine:
 
         # If they have the initial document but not the valuation
         elif (
-            "Schenkungsanmeldung" in self.game_state.collected_documents
-            and "Wertermittlung" not in self.game_state.collected_documents
+                "Schenkungsanmeldung" in self.game_state.collected_documents
+                and "Wertermittlung" not in self.game_state.collected_documents
         ):
             if current_dept != "Fachprüfung":
                 target_dept = "Fachprüfung"
@@ -498,8 +502,8 @@ class GameEngine:
 
         # If they have the valuation but not the exemption certificate
         elif (
-            "Wertermittlung" in self.game_state.collected_documents
-            and "Freibetragsbescheinigung" not in self.game_state.collected_documents
+                "Wertermittlung" in self.game_state.collected_documents
+                and "Freibetragsbescheinigung" not in self.game_state.collected_documents
         ):
             if current_dept != "Abschlussstelle":
                 target_dept = "Abschlussstelle"
@@ -512,8 +516,8 @@ class GameEngine:
 
         # If they have most documents but not the final payment request
         elif (
-            "Freibetragsbescheinigung" in self.game_state.collected_documents
-            and "Zahlungsaufforderung" not in self.game_state.collected_documents
+                "Freibetragsbescheinigung" in self.game_state.collected_documents
+                and "Zahlungsaufforderung" not in self.game_state.collected_documents
         ):
             if current_dept != "Erstbearbeitung":
                 target_dept = "Erstbearbeitung"
@@ -701,8 +705,8 @@ class GameEngine:
             correct_dept = None
             for dept in self.bureaucrats:
                 if (
-                    dept == PROCEDURES[procedure_name]["department"]
-                    or PROCEDURES[procedure_name]["department"] == "any"
+                        dept == PROCEDURES[procedure_name]["department"]
+                        or PROCEDURES[procedure_name]["department"] == "any"
                 ):
                     correct_dept = dept
                     break

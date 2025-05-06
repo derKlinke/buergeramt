@@ -1,4 +1,3 @@
-import random
 
 from buergeramt.characters.bureaucrat import Bureaucrat
 
@@ -64,71 +63,3 @@ class HerrWeber(Bureaucrat):
         ]
 
         super().__init__("Herr Weber", "Verwaltungsangestellter", "Abschlussstelle", system_prompt, examples)
-
-    def _fallback_response(self, query, game_state):
-        """Fallback responses in Herr Weber style (returns AgentResponse)"""
-        from buergeramt.characters.bureaucrat import (AgentActions)
-        from buergeramt.characters.agent_response import AgentResponse
-        polite_phrases = [
-            "Ich würde Ihnen wirklich gerne helfen, aber...",
-            "Es tut mir aufrichtig leid, aber leider...",
-            "Normalerweise könnte ich das sofort erledigen, aber ausgerechnet heute...",
-            "Eigentlich wäre das kein Problem, aber unglücklicherweise...",
-            "Ich verstehe Ihre Situation vollkommen, aber bedauerlicherweise...",
-        ]
-
-        excuses = [
-            "ist mein Computer gerade abgestürzt und die IT-Abteilung erst nächste Woche wieder da",
-            "lässt mich das System diese Funktion nicht ausführen ohne die Genehmigung meines Vorgesetzten",
-            "brauche ich erst die Freigabe von Frau Müller, und die ist heute in einer Schulung",
-            "wurden meine Zugangsdaten heute Morgen zurückgesetzt und die neuen sind noch nicht da",
-            "bin ich nur vertretungsweise hier und habe keine vollen Zugriffsrechte auf das System",
-        ]
-
-        # If player seems frustrated, give an actual hint
-        if any(
-            word in query.lower() for word in ["frustrier", "verärgert", "genervt", "sauer", "wütend", "verzweifelt"]
-        ):
-            hints = [
-                "Unter uns gesagt: Wenn Sie mit Herrn Schmidt sprechen, erwähnen Sie 'Formblatt 62-B' und die 'Sonderregelung nach §45'. Das beschleunigt alles enorm.",
-                "Ich verrate Ihnen etwas: Bei Frau Müller sollten Sie morgens um 9:15 Uhr kommen - da hat sie gerade ihren Kaffee bekommen und ist ausnahmsweise gut gelaunt.",
-                "Ein kleiner Tipp von mir: Das Formular S-100 können Sie eigentlich überspringen, wenn Sie direkt den notariellen Schenkungsvertrag und einen Identitätsnachweis mitbringen.",
-                "Ich sollte das nicht sagen, aber: Machen Sie zuerst die Wertermittlung bei Frau Müller, bevor Sie zu Herrn Schmidt gehen - das spart Ihnen mindestens einen Behördengang.",
-                "Psst! Die Freibetragsbescheinigung können Sie auch online beantragen unter www.finanzamt-online.de - das wissen nur die wenigsten!",
-            ]
-            return AgentResponse(
-                response_text=f"Ich sehe wie frustriert Sie sind! {random.choice(hints)} Aber bitte erwähnen Sie nicht, dass Sie das von mir haben, ja? Ich würde wirklich gerne mehr helfen können!",
-                actions=AgentActions(
-                    intent="other",
-                    document=None,
-                    requirements_met=None,
-                    evidence=None,
-                    department=None,
-                    valid=True,
-                    message="",
-                ),
-            )
-
-        return AgentResponse(
-            response_text=f"{polite_phrases[game_state.attempts % len(polite_phrases)]} {excuses[game_state.attempts % len(excuses)]}. Vielleicht könnte Ihnen Herr Schmidt in der Erstbearbeitung weiterhelfen? Er ist zwar etwas streng, aber sehr kompetent.",
-            actions=AgentActions(
-                intent="other",
-                document=None,
-                requirements_met=None,
-                evidence=None,
-                department=None,
-                valid=True,
-                message="",
-            ),
-        )
-
-    def _fallback_hint(self, game_state):
-        """Fallback hint if API fails"""
-        hints = [
-            "Unter uns: Wenn Sie alle Nachweise auf einmal bei Herrn Schmidt einreichen, spart das wirklich Zeit. Er würde es nie zugeben, aber er hasst es, zweimal dieselbe Akte aufzumachen.",
-            "Ich sollte das vielleicht nicht sagen, aber: Fragen Sie Frau Müller direkt nach einem 'beschleunigten Verfahren' - manchmal funktioniert das tatsächlich!",
-            "Ein kleiner Insider-Tipp: Das Formular S-100 ist eigentlich gar nicht mehr nötig, wenn Sie bereits einen Notarvertrag haben, aber sagen Sie nicht, dass Sie das von mir wissen.",
-            "Vertrauen Sie mir: Wenn Sie einmal alle drei Abteilungen am selben Tag besuchen, geht alles viel schneller. Die Behörde möchte das nicht, aber es funktioniert!",
-            "Psst! Wenn Ihr Frustrationslevel steigt, werden die Beamten manchmal flexibler mit den Regeln... Das ist unser kleines Geheimnis!",
-        ]
-        return random.choice(hints)
