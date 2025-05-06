@@ -1,9 +1,16 @@
-import os
-from dotenv import load_dotenv
-import time
 import argparse
+import io
+import os
+import sys
+import time
 
-from buergeramt.game_engine import GameEngine
+from dotenv import load_dotenv
+
+from buergeramt.engine.command_manager import CommandManager
+from buergeramt.engine.game_engine import GameEngine
+
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+sys.stdin = io.TextIOWrapper(sys.stdin.buffer, encoding="utf-8", errors="replace")
 
 
 def clear_screen():
@@ -42,50 +49,97 @@ def setup_api_key():
     return True
 
 
-def main():
-    """Main game function"""
-    load_dotenv()
+def setup_commands():
+    # --- CommandManager setup ---
+    command_manager = CommandManager()
 
+    def cmd_hilfe(arg=None):
+        print("\nVerfügbare Befehle:")
+        for cmd in command_manager.all_commands():
+            print(f"/{cmd.name}{' <argument>' if cmd.takes_argument else ''}: {cmd.description}")
+        return True
+
+    def cmd_status(arg=None):
+        print_progress(game)
+        return True
+
+    def cmd_beenden(arg=None):
+        print("Spiel wird beendet.")
+        sys.exit(0)
+
+    def agent_suggestions():
+        # Suggest agent names from the game engine (use bureaucrat names)
+        if hasattr(game, 'bureaucrats'):
+            return [b.name for b in game.bureaucrats.values()]
+        return []
+
+    def cmd_gehe_zu(arg):
+        if not arg:
+            print("Bitte geben Sie einen Agentennamen an. Beispiel: /gehe_zu Frau Müller")
+            return True
+        # Try to switch agent in the game engine
+        if hasattr(game, 'switch_agent'):
+            if game.switch_agent(arg):
+                print(f"Sie sprechen jetzt mit {arg}.")
+            else:
+                print(f"Agent oder Abteilung '{arg}' nicht gefunden.")
+        else:
+            print("Agentenwechsel ist in diesem Spielmodus nicht verfügbar.")
+        return True
+
+    # Register commands
+    command_manager.register("hilfe", cmd_hilfe, "Zeigt diese Hilfe an.")
+    command_manager.register("status", cmd_status, "Zeigt den aktuellen Fortschritt und Frustrationslevel an.")
+    command_manager.register("beenden", cmd_beenden, "Beendet das Spiel.")
+    command_manager.register("gehe_zu", cmd_gehe_zu, "Wechselt zu einem anderen Beamten (z.B. /gehe_zu Frau Müller)",
+                             takes_argument=True, argument_suggestions=agent_suggestions)
+    return command_manager
+
+
+def main():
+    load_dotenv()
     parser = argparse.ArgumentParser(description="Bürgeramt Adventure: Schenkungssteuer Edition")
     parser.add_argument("--api-key", help="OpenAI API key")
     args = parser.parse_args()
-
-    # Set API key if provided as argument
     if args.api_key:
         os.environ["OPENAI_API_KEY"] = args.api_key
-
-    # Check if API key is available
     if not setup_api_key():
         return
-
     clear_screen()
     print("Initialisiere das Finanzamt...")
     print("Verbinde mit KI-Beamten...")
     time.sleep(1)
-
-    # Create game
     game = GameEngine()
-
-    # Check if game initialized successfully
     if game.game_over:
         return
-
-    # Start the game
     game.start_game()
 
-    # Main game loop
+    command_manager = setup_commands()
+
+    # Main game loop with slash command support
     while not game.game_over:
-        # Show progress
         print_progress(game)
-
-        # Get user input
         user_input = input("\n> ")
-
-        # Process input
+        if user_input.startswith("/"):
+            # Parse command
+            parts = user_input[1:].split(maxsplit=1)
+            cmd_name = parts[0]
+            arg = parts[1] if len(parts) > 1 else None
+            cmd = command_manager.get_command(cmd_name)
+            if cmd:
+                cmd.handler(arg)
+                continue
+            else:
+                # Suggest closest command
+                suggestions = command_manager.get_suggestions(cmd_name)
+                if suggestions:
+                    print(f"Unbekannter Befehl. Meinten Sie: {', '.join('/' + s for s in suggestions)}?")
+                else:
+                    print("Unbekannter Befehl. Geben Sie /hilfe für eine Liste aller Befehle ein.")
+                continue
+        # Process normal input
         if not game.process_input(user_input):
             break
-
-    # Game over, check if player won
     if hasattr(game, "win_condition") and game.win_condition:
         print("\nGlückwunsch! Sie haben das deutsche Bürokratiesystem besiegt.")
     else:

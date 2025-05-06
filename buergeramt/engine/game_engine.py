@@ -1,13 +1,46 @@
 import random
-import sys
 import time
 from typing import List
 
-from buergeramt.rules import *
 from buergeramt.characters import *
+from buergeramt.rules import *
 
 
 class GameEngine:
+    def switch_agent(self, agent_name: str) -> bool:
+        """Public method to switch to a different agent/department by agent name. Returns True if successful."""
+        # Normalize input for matching
+        name = agent_name.strip().lower()
+        # Map possible names to departments
+        name_to_dept = {
+            "herr schmidt": "Erstbearbeitung",
+            "schmidt": "Erstbearbeitung",
+            "erstbearbeitung": "Erstbearbeitung",
+            "frau müller": "Fachprüfung",
+            "mueller": "Fachprüfung",
+            "müller": "Fachprüfung",
+            "fachprüfung": "Fachprüfung",
+            "herr weber": "Abschlussstelle",
+            "weber": "Abschlussstelle",
+            "abschlussstelle": "Abschlussstelle",
+        }
+        # Try to match
+        for key, dept in name_to_dept.items():
+            if key in name:
+                if dept == self.game_state.current_department:
+                    self._print_styled("\nSie sind bereits in dieser Abteilung.", "italic")
+                    return True
+                self._transition_to_department(dept)
+                return True
+        # Fallback: try direct department match
+        for dept in self.bureaucrats:
+            if dept.lower() in name:
+                if dept == self.game_state.current_department:
+                    self._print_styled("\nSie sind bereits in dieser Abteilung.", "italic")
+                    return True
+                self._transition_to_department(dept)
+                return True
+        return False
     """Main game engine class handling the game loop and state"""
 
     def __init__(self, use_ai_characters: bool = True):

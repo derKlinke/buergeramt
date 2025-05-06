@@ -1,9 +1,9 @@
-import json
+
+from pydantic import BaseModel
 
 from buergeramt.characters.ai_agent import OpenAIAgent
 from buergeramt.characters.context_manager import ContextManager
 from buergeramt.characters.message_builder import MessageBuilder
-from buergeramt.rules.documents import DOCUMENTS
 
 
 class Bureaucrat:
@@ -56,112 +56,70 @@ class Bureaucrat:
 
         return None
 
-    def _validate_input(self, text: str, game_state) -> dict:
-        """
-        Use the AI agent to validate the player's input and return a structured result.
-        The result should be a dict with at least:
-            - valid: bool
-            - message: str (explanation for the user)
-            - intent: str (optional, e.g. 'request_document', 'provide_evidence', etc.)
-            - document: str (optional, if a document is referenced)
-            - evidence: list (optional, if evidence is referenced)
-        """
-        if not self.agent.has_api_key():
-            # fallback: always valid, minimal info
-            return {"valid": True, "message": "", "intent": None, "document": None, "evidence": []}
+    class ValidationStep(BaseModel):
+        explanation: str
+        output: str
 
-        # Provide the agent with all relevant context
-        system_prompt = (
-            "Du bist ein bürokratischer KI-Agent in einem deutschen Verwaltungs-Adventure-Spiel. "
-            "Analysiere die Nutzereingabe im Kontext des aktuellen Spiels. "
-            "Antworte ausschließlich mit JSON im folgenden Format: "
-            "{ 'valid': bool, 'message': '<Erklärung>', 'intent': '<Absicht>', 'document': '<Dokument>', 'evidence': [<Beweise>] } "
-            "\nErkläre im Feld 'message' ggf. warum die Eingabe ungültig ist oder was fehlt. "
+    class UserInputValidation(BaseModel):
+        valid: bool
+        message: str
+        intent: str | None = None
+        document: str | None = None
+        evidence: list[str] = []
+        steps: list['Bureaucrat.ValidationStep'] = []
+
+    def _validate_input(self, text: str, game_state) -> 'Bureaucrat.UserInputValidation':
+        if not self.agent.has_api_key():
+            return Bureaucrat.UserInputValidation(valid=True, message="", intent=None, document=None, evidence=[], steps=[])
+
+        persona_prompt = self.system_prompt.strip()
+        game_state_info = self.message_builder._format_game_state(game_state)
+        validation_instruction = (
+            "Bevor du antwortest, prüfe die Nutzereingabe nach folgenden Regeln: "
+            "- Ist die Anfrage höflich und vollständig? "
+            "- Ist sie relevant für die aktuelle Spielsituation? "
+            "- Enthält sie einen klaren Bezug zu Dokumenten, Formularen oder Beweismitteln? "
+            "Gib eine strukturierte Analyse im folgenden Format zurück: "
+            "UserInputValidation(valid: bool, message: str, intent: str | None, document: str | None, evidence: list[str], steps: list[ValidationStep]) "
+            "Jeder Schritt in steps sollte eine kurze Erklärung und das jeweilige Zwischenergebnis enthalten. "
             "Mögliche Werte für intent: 'request_document', 'provide_evidence', 'greeting', 'other'. "
             "Lasse 'document' und 'evidence' leer, falls nicht relevant."
         )
-        game_state_info = self.message_builder._format_game_state(game_state)
-        user_msg = {
-            "role": "user",
-            "content": f"Eingabe: '{text}'\nAktueller Spielstand: {game_state_info}"
-        }
+        validation_prompt = f"{persona_prompt}\n\n{validation_instruction}\n\nAktueller Spielstand: {game_state_info}\nNutzereingabe: '{text}'"
         try:
-            resp = self.agent.chat([
-                {"role": "system", "content": system_prompt},
-                user_msg
-            ], temperature=0)
-            content = resp.choices[0].message.content.strip()
-            # try to parse JSON from the response
-            result = json.loads(content)
-            # ensure required fields
-            for key in ["valid", "message", "intent", "document", "evidence"]:
-                if key not in result:
-                    if key == "evidence":
-                        result[key] = []
-                    else:
-                        result[key] = None
-            return result
+            completion = self.agent.client.beta.chat.completions.parse(
+                model=self.agent.get_model(),
+                messages=[{"role": "system", "content": validation_prompt}],
+                response_format=Bureaucrat.UserInputValidation,
+                temperature=0
+            )
+            validation = completion.choices[0].message.parsed
+            return validation
         except Exception:
-            # fallback: always valid, minimal info
-            return {"valid": True, "message": "", "intent": None, "document": None, "evidence": []}
+            return Bureaucrat.UserInputValidation(valid=True, message="", intent=None, document=None, evidence=[], steps=[])
 
     def respond(self, query, game_state):
         validation = self._validate_input(query, game_state)
-        if not validation.get("valid", False):
-            return validation["message"]
+        # Use Pydantic model fields, not dict access
+        if not validation.valid:
+            return validation.message
         try:
             if not self.agent.has_api_key():
                 return self._fallback_response(query, game_state)
             messages = self.build_messages(query, game_state)
-            action_system_message = {
+            messages.append({
                 "role": "system",
-                "content": """
-                As a bureaucrat, you can take specific actions based on game rules. You should:
-                1. Determine if a user is asking for a specific document that you can provide
-                2. Check if a user is showing evidence (like ID or forms)
-                3. Decide if you should redirect them to another department
-                When responding, you should remain in character as a German bureaucrat.
-                Keep your responses under 100 words.
-                """,
-            }
-            messages.append(action_system_message)
+                "content": f"Strukturiertes Analyseergebnis der Nutzereingabe: {validation.model_dump_json()}"
+            })
             response = self.agent.chat(messages)
             ai_response = response.choices[0].message.content.strip()
             self.context_manager.add_exchange(query, ai_response)
-            # Optionally, you could return both the AI response and the validation dict for game logic
             return ai_response
         except Exception as e:
             print(f"API Error: {e}")
             return self._fallback_response(query, game_state)
 
-    def check_requirements(self, document, game_state):
-        try:
-            if not self.agent.has_api_key():
-                return super().check_requirements(document, game_state)
-            state_info = self.message_builder._format_game_state(game_state)
-            prompt = f"""
-            As {self.name}, you need to decide if the user meets requirements for the document: {document}.
-
-            Game state: {state_info}
-
-            Document requirements: {DOCUMENTS[document]['requirements']}
-
-            Based on your bureaucratic nature and the game rules, do they meet all requirements?
-
-            Respond with \"yes\" or \"no\" followed by a brief reason.
-            """
-            response = self.agent.chat([
-                {"role": "user", "content": prompt}
-            ], max_tokens=100, temperature=0.5)
-            ai_response = response.choices[0].message.content.strip().lower()
-            if ai_response.startswith("yes"):
-                return True, "alle Voraussetzungen erfüllt"
-            else:
-                reason = ai_response.split("no")[1].strip() if "no" in ai_response else "ungenügende Dokumentation"
-                return False, reason
-        except Exception as e:
-            print(f"API Error in check_requirements: {e}")
-            return super().check_requirements(document, game_state)
+    # navigation to other agents is intentionally not supported in this Bureaucrat class
 
     def give_hint(self, game_state):
         try:
