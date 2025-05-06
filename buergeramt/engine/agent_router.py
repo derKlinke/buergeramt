@@ -52,6 +52,7 @@ class AgentRouter:
         if print_styled:
             print_styled(f"\nSie verlassen das Büro von {self.active_bureaucrat.name}...", "italic")
         import time
+
         time.sleep(1)
         if print_styled:
             print_styled(f"Sie gehen zum Büro der Abteilung {department}...", "italic")

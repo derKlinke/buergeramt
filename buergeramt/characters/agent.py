@@ -10,8 +10,9 @@ class Agent:
         self.model = "gpt-4o"
 
         try:
-            self.client.chat.completions.create(model="gpt-4o", messages=[{"role": "user", "content": "test"}],
-                                                max_tokens=1)
+            self.client.chat.completions.create(
+                model="gpt-4o", messages=[{"role": "user", "content": "test"}], max_tokens=1
+            )
         except Exception as e:
             raise RuntimeError("gpt-4o model is required but not available: " + str(e))
 
@@ -23,10 +24,7 @@ class Agent:
 
     def chat(self, messages, max_tokens=200, temperature=0.7):
         return self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            max_tokens=max_tokens,
-            temperature=temperature
+            model=self.model, messages=messages, max_tokens=max_tokens, temperature=temperature
         )
 
     def chat_structured(self, messages, response_format, max_tokens=200, temperature=0.7):

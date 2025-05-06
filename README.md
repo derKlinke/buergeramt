@@ -23,6 +23,7 @@ This game puts you in the role of someone trying to navigate the complex German 
 ## AI-Powered Experience
 
 The game features fully AI-powered bureaucrats:
+
 - Each character has a distinct personality and conversational style
 - Every playthrough is unique and unpredictable
 - The bureaucrats respond dynamically to your inputs
@@ -33,18 +34,19 @@ The game features fully AI-powered bureaucrats:
 
 You can start the game using:
 
-```
+```shell
 python -m buergeramt
 ```
 
 You need to provide an OpenAI API key to play. You can either:
 
-```
+```shell
 python -m buergeramt --api-key=your_api_key_here
 ```
 
 Or set it as an environment variable:
-```
+
+```shell
 export OPENAI_API_KEY=your_api_key_here
 python -m buergeramt
 ```
@@ -52,7 +54,9 @@ python -m buergeramt
 Or use a `.env` file as described in the installation section.
 
 ### Gameplay
+
 Interact with the bureaucrats by having natural conversations. Try:
+
 - Showing your documents (e.g., "Hier ist mein Personalausweis")
 - Asking for forms (e.g., "Ich möchte eine Schenkungsanmeldung")
 - Expressing frustration (e.g., "Das ist doch lächerlich!")
@@ -84,7 +88,8 @@ Your goal is to successfully navigate the system and get your gift tax applicati
 ## Installation
 
 1. Clone the repository:
-   ```
+
+   ```shell
    git clone https://github.com/yourusername/buergeramt.git
    cd buergeramt
    ```
@@ -92,17 +97,20 @@ Your goal is to successfully navigate the system and get your gift tax applicati
 2. Install dependencies using one of the following methods:
 
    **Using pip with requirements.txt:**
-   ```
+
+   ```shell
    pip install -r requirements.txt
    ```
 
 3. Set up your OpenAI API key:
-   ```
+
+   ```shell
    export OPENAI_API_KEY=your_api_key_here
    ```
 
    Alternatively, you can create a `.env` file in the project root with:
-   ```
+
+   ```shell
    OPENAI_API_KEY=your_api_key_here
    ```
 

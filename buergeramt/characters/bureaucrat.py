@@ -31,22 +31,22 @@ class Bureaucrat:
 
         # Has Schenkungsanmeldung but no Wertermittlung
         if (
-                "Schenkungsanmeldung" in game_state.collected_documents
-                and "Wertermittlung" not in game_state.collected_documents
+            "Schenkungsanmeldung" in game_state.collected_documents
+            and "Wertermittlung" not in game_state.collected_documents
         ):
             return "The user has the initial application but needs valuation. As Fachprüfung, you should request market comparison and expert opinion."
 
         # Has Wertermittlung but no Freibetragsbescheinigung
         if (
-                "Wertermittlung" in game_state.collected_documents
-                and "Freibetragsbescheinigung" not in game_state.collected_documents
+            "Wertermittlung" in game_state.collected_documents
+            and "Freibetragsbescheinigung" not in game_state.collected_documents
         ):
             return "The user has valuation but needs exemption certificate. As Abschlussstelle, you should ask for relationship proof and previous gifts."
 
         # Has most documents but not final one
         if (
-                "Freibetragsbescheinigung" in game_state.collected_documents
-                and "Zahlungsaufforderung" not in game_state.collected_documents
+            "Freibetragsbescheinigung" in game_state.collected_documents
+            and "Zahlungsaufforderung" not in game_state.collected_documents
         ):
             return "The user is in the final stage and needs payment request. Return to Erstbearbeitung for final processing."
 

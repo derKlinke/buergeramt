@@ -39,11 +39,13 @@ class GameEngine:
 
         self._print_styled("• Wechseln Sie zwischen Abteilungen mit Befehlen wie 'Ich möchte zu Herrn Weber'", "hint")
         self._print_styled("• Drücken Sie Ihre Frustration aus, wenn Sie möchten", "hint")
-        self._print_styled("• Fragen Sie nach konkreten Dokumenten wie 'Schenkungsanmeldung' oder 'Wertermittlung'",
-                           "hint")
+        self._print_styled(
+            "• Fragen Sie nach konkreten Dokumenten wie 'Schenkungsanmeldung' oder 'Wertermittlung'", "hint"
+        )
         self._print_styled(
             "• Nutzen Sie Slash-Befehle wie /hilfe, /status, /beenden oder /gehe_zu <Name> für wichtige Aktionen",
-            "hint")
+            "hint",
+        )
 
         # Show an example
         self._print_styled(
@@ -108,8 +110,8 @@ class GameEngine:
         if not self.game_state.collected_documents:
             if self.game_state.current_department == "Erstbearbeitung":
                 if (
-                        "valid_id" in self.game_state.evidence_provided
-                        and "gift_details" in self.game_state.evidence_provided
+                    "valid_id" in self.game_state.evidence_provided
+                    and "gift_details" in self.game_state.evidence_provided
                 ):
                     self._print_styled(
                         "Fragen Sie nach der Schenkungsanmeldung: 'Ich möchte eine Schenkungsanmeldung beantragen'",
@@ -128,8 +130,8 @@ class GameEngine:
 
         # If player has Schenkungsanmeldung but no Wertermittlung
         if (
-                "Schenkungsanmeldung" in self.game_state.collected_documents
-                and "Wertermittlung" not in self.game_state.collected_documents
+            "Schenkungsanmeldung" in self.game_state.collected_documents
+            and "Wertermittlung" not in self.game_state.collected_documents
         ):
             if self.game_state.current_department != "Fachprüfung":
                 self._print_styled("Gehen Sie zur Abteilung Fachprüfung: 'Ich möchte zu Frau Müller'", "hint")
@@ -141,8 +143,8 @@ class GameEngine:
                 if "expert_opinion" not in self.game_state.evidence_provided:
                     self._print_styled("Reichen Sie ein Wertgutachten ein: 'Hier ist mein Wertgutachten'", "hint")
                 if (
-                        "market_comparison" in self.game_state.evidence_provided
-                        and "expert_opinion" in self.game_state.evidence_provided
+                    "market_comparison" in self.game_state.evidence_provided
+                    and "expert_opinion" in self.game_state.evidence_provided
                 ):
                     self._print_styled(
                         "Fragen Sie nach der Wertermittlung: 'Kann ich jetzt die Wertermittlung bekommen?'", "hint"
@@ -151,8 +153,8 @@ class GameEngine:
 
         # If player has Wertermittlung but no Freibetragsbescheinigung
         if (
-                "Wertermittlung" in self.game_state.collected_documents
-                and "Freibetragsbescheinigung" not in self.game_state.collected_documents
+            "Wertermittlung" in self.game_state.collected_documents
+            and "Freibetragsbescheinigung" not in self.game_state.collected_documents
         ):
             if self.game_state.current_department != "Abschlussstelle":
                 self._print_styled("Gehen Sie zur Abteilung Abschlussstelle: 'Ich möchte zu Herrn Weber'", "hint")
@@ -176,8 +178,8 @@ class GameEngine:
 
         # If player has most documents but not Zahlungsaufforderung
         if (
-                "Freibetragsbescheinigung" in self.game_state.collected_documents
-                and "Zahlungsaufforderung" not in self.game_state.collected_documents
+            "Freibetragsbescheinigung" in self.game_state.collected_documents
+            and "Zahlungsaufforderung" not in self.game_state.collected_documents
         ):
             if self.game_state.current_department != "Erstbearbeitung":
                 self._print_styled("Gehen Sie zurück zur Erstbearbeitung: 'Ich möchte zu Herrn Schmidt'", "hint")
@@ -236,7 +238,7 @@ class GameEngine:
 
         # Evidence submission
         if intent == "provide_evidence" and evidence:
-            for ev in (evidence or []):
+            for ev in evidence or []:
                 # Accept evidence if not already provided
                 if ev not in self.game_state.evidence_provided:
                     self.game_state.add_evidence(ev, "(Form über KI)")
@@ -308,7 +310,11 @@ class GameEngine:
 
         # 30% chance to actually change departments after an interruption
         if random.random() < 0.3:
-            options = [dept for dept in self.agent_router.get_bureaucrats().keys() if dept != self.game_state.current_department]
+            options = [
+                dept
+                for dept in self.agent_router.get_bureaucrats().keys()
+                if dept != self.game_state.current_department
+            ]
             target_dept = random.choice(options)
             reason = random.choice(
                 [
@@ -321,9 +327,7 @@ class GameEngine:
             )
 
             bureaucrat = self.agent_router.get_active_bureaucrat()
-            self._print_styled(
-                f"\n{bureaucrat.name}: Sie müssen zur Abteilung {target_dept}, {reason}.", "bureaucrat"
-            )
+            self._print_styled(f"\n{bureaucrat.name}: Sie müssen zur Abteilung {target_dept}, {reason}.", "bureaucrat")
             self._transition_to_department(target_dept)
         else:
             self._print_styled("\nWir können jetzt fortfahren.", "bureaucrat")
@@ -334,7 +338,9 @@ class GameEngine:
         """Process the player attempting to acquire documents"""
         for document_name in document_names:
             # Check if the player meets the requirements
-            can_receive, reason = self.agent_router.get_active_bureaucrat().check_requirements(document_name, self.game_state)
+            can_receive, reason = self.agent_router.get_active_bureaucrat().check_requirements(
+                document_name, self.game_state
+            )
 
             if can_receive:
                 self._print_styled(f"\nSie erhalten das Dokument '{document_name}'!", "success")
@@ -422,8 +428,8 @@ class GameEngine:
 
         # If they have the initial document but not the valuation
         elif (
-                "Schenkungsanmeldung" in self.game_state.collected_documents
-                and "Wertermittlung" not in self.game_state.collected_documents
+            "Schenkungsanmeldung" in self.game_state.collected_documents
+            and "Wertermittlung" not in self.game_state.collected_documents
         ):
             if current_dept != "Fachprüfung":
                 target_dept = "Fachprüfung"
@@ -436,8 +442,8 @@ class GameEngine:
 
         # If they have the valuation but not the exemption certificate
         elif (
-                "Wertermittlung" in self.game_state.collected_documents
-                and "Freibetragsbescheinigung" not in self.game_state.collected_documents
+            "Wertermittlung" in self.game_state.collected_documents
+            and "Freibetragsbescheinigung" not in self.game_state.collected_documents
         ):
             if current_dept != "Abschlussstelle":
                 target_dept = "Abschlussstelle"
@@ -450,8 +456,8 @@ class GameEngine:
 
         # If they have most documents but not the final payment request
         elif (
-                "Freibetragsbescheinigung" in self.game_state.collected_documents
-                and "Zahlungsaufforderung" not in self.game_state.collected_documents
+            "Freibetragsbescheinigung" in self.game_state.collected_documents
+            and "Zahlungsaufforderung" not in self.game_state.collected_documents
         ):
             if current_dept != "Erstbearbeitung":
                 target_dept = "Erstbearbeitung"
@@ -534,7 +540,9 @@ class GameEngine:
     def _handle_document_request(self, document_name: str):
         """Handle a request for a specific document"""
         # Check if the player meets the requirements
-        can_receive, reason = self.agent_router.get_active_bureaucrat().check_requirements(document_name, self.game_state)
+        can_receive, reason = self.agent_router.get_active_bureaucrat().check_requirements(
+            document_name, self.game_state
+        )
 
         if can_receive:
             self._print_styled(f"\nSie haben das Dokument '{document_name}' erhalten!", "success")
@@ -635,8 +643,8 @@ class GameEngine:
             correct_dept = None
             for dept in self.bureaucrats:
                 if (
-                        dept == PROCEDURES[procedure_name]["department"]
-                        or PROCEDURES[procedure_name]["department"] == "any"
+                    dept == PROCEDURES[procedure_name]["department"]
+                    or PROCEDURES[procedure_name]["department"] == "any"
                 ):
                     correct_dept = dept
                     break

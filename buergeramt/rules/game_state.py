@@ -3,6 +3,7 @@ from buergeramt.rules.documents import DOCUMENTS
 from buergeramt.rules.evidence import EVIDENCE
 from buergeramt.rules.procedures import PROCEDURES
 
+
 # Game state tracking
 class GameState:
     def __init__(self):
@@ -75,8 +76,8 @@ class GameState:
                 if loop["condition"] == "missing_evidence" and len(self.evidence_provided) < 3:
                     return loop
                 elif (
-                        loop["condition"] == "wrong_department"
-                        and self.current_department != PROCEDURES[self.current_procedure]["department"]
+                    loop["condition"] == "wrong_department"
+                    and self.current_department != PROCEDURES[self.current_procedure]["department"]
                 ):
                     return loop
                 elif loop["condition"] == "incomplete_form" and self.attempts % 3 == 0:

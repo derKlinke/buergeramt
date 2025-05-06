@@ -49,8 +49,6 @@ def setup_api_key():
     return True
 
 
-
-
 # --- CommandManager setup ---
 def setup_commands(game):
     command_manager = CommandManager()
@@ -71,7 +69,7 @@ def setup_commands(game):
 
     def agent_suggestions():
         # Suggest agent names from the game engine (use bureaucrat names)
-        if hasattr(game, 'agent_router'):
+        if hasattr(game, "agent_router"):
             return [b.name for b in game.agent_router.get_bureaucrats().values()]
         return []
 
@@ -80,7 +78,7 @@ def setup_commands(game):
             print("Bitte geben Sie einen Agentennamen an. Beispiel: /gehe_zu Frau Müller")
             return True
         # Try to switch agent in the game engine
-        if hasattr(game, 'switch_agent'):
+        if hasattr(game, "switch_agent"):
             if game.switch_agent(arg):
                 print(f"Sie sprechen jetzt mit {arg}.")
             else:
@@ -93,8 +91,13 @@ def setup_commands(game):
     command_manager.register("hilfe", cmd_hilfe, "Zeigt diese Hilfe an.")
     command_manager.register("status", cmd_status, "Zeigt den aktuellen Fortschritt und Frustrationslevel an.")
     command_manager.register("beenden", cmd_beenden, "Beendet das Spiel.")
-    command_manager.register("gehe_zu", cmd_gehe_zu, "Wechselt zu einem anderen Beamten (z.B. /gehe_zu Frau Müller)",
-                             takes_argument=True, argument_suggestions=agent_suggestions)
+    command_manager.register(
+        "gehe_zu",
+        cmd_gehe_zu,
+        "Wechselt zu einem anderen Beamten (z.B. /gehe_zu Frau Müller)",
+        takes_argument=True,
+        argument_suggestions=agent_suggestions,
+    )
     return command_manager
 
 
