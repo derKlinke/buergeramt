@@ -1,6 +1,5 @@
 import time
 
-from buergeramt.characters import *
 from buergeramt.engine.agent_router import AgentRouter
 from buergeramt.rules import *
 

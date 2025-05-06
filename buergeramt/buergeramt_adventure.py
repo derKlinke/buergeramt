@@ -1,5 +1,4 @@
 import argparse
-import io
 import os
 import sys
 import time
@@ -8,9 +7,6 @@ from dotenv import load_dotenv
 
 from buergeramt.engine.command_manager import CommandManager
 from buergeramt.engine.game_engine import GameEngine
-
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-sys.stdin = io.TextIOWrapper(sys.stdin.buffer, encoding="utf-8", errors="replace")
 
 
 def clear_screen():

@@ -1,28 +1,31 @@
-from buergeramt.rules.documents import DOCUMENTS
-from buergeramt.rules.evidence import EVIDENCE
+from buergeramt.rules.loader import get_config
 
 
 # Game state tracking
 class GameState:
-    def __init__(self):
-        self.collected_documents = {}
+    def __init__(self, config=None):
+        # load unified game config
+        self.config = config or get_config()
+        self.collected_documents = {}  # id->Document
+        self.evidence_provided = {}  # id->form
         self.current_department = "initial"
-        self.evidence_provided = {}
         self.current_procedure = "Antragstellung"
         self.attempts = 0
         self.frustration_level = 0
         self.progress = 0
 
-    def add_document(self, document_name):
-        """Add a completed document to the player's collection"""
-        if document_name in DOCUMENTS:
-            self.collected_documents[document_name] = DOCUMENTS[document_name]
+    def add_document(self, document_name: str) -> bool:
+        """add a completed document to the player's collection"""
+        docs = self.config.documents
+        if document_name in docs:
+            self.collected_documents[document_name] = docs[document_name]
             return True
         return False
 
-    def add_evidence(self, evidence_name, evidence_form):
-        """Add a piece of evidence to the player's collection"""
-        if evidence_name in EVIDENCE and evidence_form in EVIDENCE[evidence_name]["acceptable_forms"]:
+    def add_evidence(self, evidence_name: str, evidence_form: str) -> bool:
+        """add a piece of evidence to the player's collection"""
+        evs = self.config.evidence
+        if evidence_name in evs and evidence_form in evs[evidence_name].acceptable_forms:
             self.evidence_provided[evidence_name] = evidence_form
             return True
         return False
@@ -60,24 +63,26 @@ class GameState:
         """Return a list of provided evidence names."""
         return list(self.evidence_provided.keys())
 
-    def get_department_documents(self):
-        """Return a list of document names available in the current department."""
-        return [doc for doc, data in DOCUMENTS.items() if data["department"] == self.current_department]
+    def get_department_documents(self) -> list[str]:
+        """return document ids available in the current department"""
+        return [doc_id for doc_id, doc in self.config.documents.items() if doc.department == self.current_department]
 
-    def get_missing_evidence(self):
-        """Return a dict of document names to missing evidence requirements."""
-        missing = {}
-        for doc_name, doc_data in DOCUMENTS.items():
-            if doc_name not in self.collected_documents:
-                required = doc_data["requirements"]
-                missing_reqs = [req for req in required if req not in self.evidence_provided]
-                if missing_reqs:
-                    missing[doc_name] = missing_reqs
+    def get_missing_evidence(self) -> dict[str, list[str]]:
+        """return a map of doc ids to list of missing evidence ids"""
+        missing: dict[str, list[str]] = {}
+        for doc_id, doc in self.config.documents.items():
+            if doc_id in self.collected_documents:
+                continue
+            # find requirements not yet provided
+            missing_reqs = [r for r in doc.requirements if r not in self.evidence_provided]
+            if missing_reqs:
+                missing[doc_id] = missing_reqs
         return missing
-    
+
     def get_formatted_gamestate(self):
         """Return a JSON-formatted string of the current game state for messaging or debugging."""
         import json
+
         state_info = {
             "current_department": self.current_department,
             "current_procedure": self.current_procedure,

@@ -1,16 +1,29 @@
-from buergeramt.characters import FrauMueller, HerrSchmidt, HerrWeber
+from buergeramt.characters.persona_factory import build_bureaucrat
+from buergeramt.rules.loader import get_config
 
 
 class AgentRouter:
     def __init__(self, game_state):
-        self.bureaucrats = {
-            "Erstbearbeitung": HerrSchmidt(),
-            "Fachprüfung": FrauMueller(),
-            "Abschlussstelle": HerrWeber(),
-        }
+        # dynamically build agents from config
+        config = get_config()
+        self.bureaucrats = {}
+        for persona_id, persona in config.personas.items():
+            agent = build_bureaucrat(persona_id)
+            self.bureaucrats[persona.department] = agent
         self.game_state = game_state
-        self.active_bureaucrat = self.bureaucrats["Erstbearbeitung"]
-        self.game_state.current_department = "Erstbearbeitung"
+        # determine starting department: map procedure department codes to persona departments
+        proc_dept_code = game_state.current_department or config.procedures[game_state.current_procedure].department
+        # alias mapping from procedure-level codes to persona departments
+        DEPT_ALIAS = {
+            "initial": "Erstbearbeitung",
+            "final": "Abschlussstelle",
+            "appeals": "Erstbearbeitung",
+        }
+        dept_key = DEPT_ALIAS.get(proc_dept_code, proc_dept_code)
+        # fall back to any matching persona department
+        self.active_bureaucrat = self.bureaucrats.get(dept_key) or next(iter(self.bureaucrats.values()))
+        # set game state to the persona department
+        self.game_state.current_department = self.active_bureaucrat.department
 
     def switch_agent(self, agent_name: str, print_styled=None) -> bool:
         name = agent_name.strip().lower()

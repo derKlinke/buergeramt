@@ -1,0 +1,256 @@
+# unified game configuration
+
+# all document definitions
+documents:
+  Schenkungsanmeldung:
+    description: "Initial gift tax declaration form (notification of a gift received from a friend)"
+    requirements:
+      - valid_id
+      - gift_details
+    department: Erstbearbeitung
+    code: S-100
+  Steuernummer:
+    description: "Tax identification number verification"
+    requirements:
+      - valid_id
+      - residence_proof
+    department: Erstbearbeitung
+    code: ST-200
+  Wertermittlung:
+    description: "Gift valuation certificate"
+    requirements:
+      - market_comparison
+      - expert_opinion
+    department: Fachprüfung
+    code: W-300
+  Freibetragsbescheinigung:
+    description: "Tax exemption certificate"
+    requirements:
+      - relationship_proof
+      - previous_gifts
+      - steuernummer
+    department: Abschlussstelle
+    code: F-400
+  Zahlungsaufforderung:
+    description: "Payment request notice"
+    requirements:
+      - Schenkungsanmeldung
+      - Wertermittlung
+      - Freibetragsbescheinigung
+    department: Abschlussstelle
+    code: Z-500
+
+# all evidence definitions
+evidence:
+  valid_id:
+    description: "Valid identification document"
+    acceptable_forms:
+      - Personalausweis
+      - Reisepass
+      - Aufenthaltstitel
+  gift_details:
+    description: "Detailed description of the gift with proof of transfer"
+    acceptable_forms:
+      - Notarielle Urkunde
+      - Übergabeprotokoll
+      - Bankbeleg
+      - Eigentumsnachweis
+  residence_proof:
+    description: "Proof of current residence"
+    acceptable_forms:
+      - Meldebescheinigung
+      - Mietvertrag
+      - Grundbuchauszug
+  market_comparison:
+    description: "Market comparison for similar items/properties"
+    acceptable_forms:
+      - Gutachten
+      - Marktwertanalyse
+      - Vergleichspreise
+  expert_opinion:
+    description: "Expert opinion on the value of the gift"
+    acceptable_forms:
+      - Sachverständigengutachten
+      - Wertgutachten
+  previous_gifts:
+    description: "Declaration of previous gifts from the same person"
+    acceptable_forms:
+      - Eigenerklärung
+      - Frühere Steuerbescheide
+      - Notarielle Urkunden
+  steuernummer:
+    description: "Tax identification number document"
+    acceptable_forms:
+      - Steuerbescheid
+      - Steuer-ID Mitteilung
+
+# procedure definitions
+procedures:
+  Antragstellung:
+    description: "Initial application submission"
+    keywords:
+      - einreichen
+      - anmelden
+      - beantragen
+    next_steps:
+      - Formularprüfung
+      - Nachweisanforderung
+    department: initial
+  Formularprüfung:
+    description: "Form verification process"
+    keywords:
+      - prüfen
+      - kontrollieren
+      - verifizieren
+    next_steps:
+      - Nachweisanforderung
+      - Weiterleitung
+    department: initial
+  Nachweisanforderung:
+    description: "Request for additional evidence"
+    keywords:
+      - nachweisen
+      - belegen
+      - dokumentieren
+    next_steps:
+      - Terminvereinbarung
+      - Weiterleitung
+    department: any
+  Terminvereinbarung:
+    description: "Scheduling an appointment"
+    keywords:
+      - termin
+      - vereinbaren
+      - vorstellig
+    next_steps:
+      - Weiterleitung
+      - Warteschleife
+    department: any
+  Weiterleitung:
+    description: "Forwarding to another department"
+    keywords:
+      - weiterleiten
+      - zuständigkeit
+      - vermitteln
+    next_steps:
+      - Antragstellung
+      - Warteschleife
+    department: any
+  Warteschleife:
+    description: "Waiting period"
+    keywords:
+      - warten
+      - gedulden
+      - bearbeitungszeit
+    next_steps:
+      - Bescheiderteilung
+      - Nachweisanforderung
+    department: any
+  Bescheiderteilung:
+    description: "Decision notice issuance"
+    keywords:
+      - bescheid
+      - entscheidung
+      - bewilligen
+    next_steps:
+      - Widerspruch
+      - Zahlungsaufforderung
+    department: final
+  Widerspruch:
+    description: "Formal objection procedure"
+    keywords:
+      - widersprechen
+      - anfechten
+      - beschweren
+    next_steps:
+      - Nachweisanforderung
+      - Warteschleife
+    department: appeals
+  Zahlungsaufforderung:
+    description: "Payment request procedure"
+    keywords:
+      - zahlen
+      - überweisen
+      - entrichten
+    next_steps:
+      - Abschluss
+    department: final
+  Abschluss:
+    description: "Completion of the process"
+    keywords:
+      - abschließen
+      - beenden
+      - erledigen
+    next_steps: []
+    department: final
+
+# persona definitions
+personas:
+  FrauMueller:
+    name: "Frau Müller"
+    role: "Sachbearbeiterin"
+    department: "Fachprüfung"
+    system_prompt_template: |
+      ## ROLE: {name}, {role}, Deutsche Finanzamtsbehörde (Abteilung {department})
+      ## YOUR PERSONALITY
+      {personality}
+      ## GAME CONTEXT
+      - Your department issues: {handled_documents}
+      - Required evidence: {required_evidence}
+    personality:
+      - Always in a hurry and extremely impatient
+      - Constantly mention you're about to go on break or leave for the day
+      - Use many abbreviations
+      - Very strict about deadlines and appointment times
+    behavioral_rules:
+      - NEVER break character
+      - ALWAYS keep responses under 80 words
+      - ALWAYS use abbreviations and exclamation points
+    examples:
+      - user: "Ich brauche Hilfe mit meiner Schenkungssteuer."
+        assistant: "SchSt? Falsches Büro! Erstbearbeitung macht das - mit Formular S-100! System fährt gleich runter, Mittagspause in 3 Minuten!"
+    handled_documents:
+      - Wertermittlung
+    required_evidence:
+      - market_comparison
+      - expert_opinion
+  HerrSchmidt:
+    name: "Herr Schmidt"
+    role: "Oberamtsrat"
+    department: "Erstbearbeitung"
+    system_prompt_template: |
+      ## ROLE: {name}, {role}, Deutsche Finanzamtsbehörde (Abteilung {department})
+      ...
+    personality:
+      - Extremely precise and detail-oriented
+      - Speak in complex bureaucratic German
+    behavioral_rules:
+      - NEVER break character
+      - ALWAYS keep responses under 100 words
+    examples: []
+    handled_documents:
+      - Schenkungsanmeldung
+      - Zahlungsaufforderung
+    required_evidence:
+      - valid_id
+      - gift_details
+  HerrWeber:
+    name: "Herr Weber"
+    role: "Verwaltungsangestellter"
+    department: "Abschlussstelle"
+    system_prompt_template: |
+      ## ROLE: {name}, {role}, Deutsche Finanzamtsbehörde (Abteilung {department})
+      ...
+    personality:
+      - Very friendly, apologetic, sympathetic
+      - No decision-making power
+    behavioral_rules:
+      - NEVER break character
+      - ALWAYS keep responses under 100 words
+    examples: []
+    handled_documents:
+      - Freibetragsbescheinigung
+    required_evidence:
+      - relationship_proof
+      - previous_gifts
+      - steuernummer
