@@ -83,7 +83,6 @@ Your goal is to successfully navigate the system and get your gift tax applicati
 - Required Python packages:
   - `openai` (version 1.0.0 or higher)
   - `python-dotenv`
-  - `typer`
 
 ## Installation
 
