@@ -51,3 +51,42 @@ class GameState:
 
         self.progress = min(100, document_progress + evidence_progress + procedure_bonus)
         return self.progress
+
+    def get_collected_documents(self):
+        """Return a list of collected document names."""
+        return list(self.collected_documents.keys())
+
+    def get_evidence_provided(self):
+        """Return a list of provided evidence names."""
+        return list(self.evidence_provided.keys())
+
+    def get_department_documents(self):
+        """Return a list of document names available in the current department."""
+        return [doc for doc, data in DOCUMENTS.items() if data["department"] == self.current_department]
+
+    def get_missing_evidence(self):
+        """Return a dict of document names to missing evidence requirements."""
+        missing = {}
+        for doc_name, doc_data in DOCUMENTS.items():
+            if doc_name not in self.collected_documents:
+                required = doc_data["requirements"]
+                missing_reqs = [req for req in required if req not in self.evidence_provided]
+                if missing_reqs:
+                    missing[doc_name] = missing_reqs
+        return missing
+    
+    def get_formatted_gamestate(self):
+        """Return a JSON-formatted string of the current game state for messaging or debugging."""
+        import json
+        state_info = {
+            "current_department": self.current_department,
+            "current_procedure": self.current_procedure,
+            "collected_documents": self.get_collected_documents(),
+            "evidence_provided": self.get_evidence_provided(),
+            "attempts": self.attempts,
+            "frustration_level": self.frustration_level,
+            "progress": self.progress,
+            "department_documents": self.get_department_documents(),
+            "missing_evidence": self.get_missing_evidence(),
+        }
+        return json.dumps(state_info, indent=2)

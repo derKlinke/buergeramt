@@ -71,7 +71,7 @@ class Bureaucrat:
             "Keep 'response_text' as your in-character reply to the user. "
             "If a field is not relevant, set it to null or an empty list."
         )
-        game_state_info = self.message_builder._format_game_state(game_state)
+        game_state_info = game_state.get_formatted_gamestate()
         user_msg = {"role": "user", "content": f"Eingabe: '{query}'\nAktueller Spielstand: {game_state_info}"}
         try:
             messages = [{"role": "system", "content": system_instruction}, user_msg]
@@ -89,7 +89,7 @@ class Bureaucrat:
     def give_hint(self, game_state):
         if not self.agent.has_api_key():
             raise RuntimeError("AI agent is not available: missing API key.")
-        state_info = self.message_builder._format_game_state(game_state)
+        state_info = game_state.get_formatted_gamestate()
         prompt = f"""
         As {self.name}, provide a hint to the user about their next steps.
 
