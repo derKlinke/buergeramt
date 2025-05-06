@@ -1,8 +1,8 @@
-**/.claude/settings.local.json
-
 .venv/
 .claude/
 .idea/
 .vscode/
 
 .env
+
+__pycache__/

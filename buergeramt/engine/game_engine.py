@@ -82,13 +82,11 @@ class GameEngine:
         self._print_styled(
             "• Zeigen Sie Ausweise und Unterlagen durch Angabe von 'Personalausweis', 'Urkunde', etc.", "hint"
         )
+
         self._print_styled("• Wechseln Sie zwischen Abteilungen mit Befehlen wie 'Ich möchte zu Herrn Weber'", "hint")
         self._print_styled("• Drücken Sie Ihre Frustration aus, wenn Sie möchten", "hint")
-        self._print_styled(
-            "• Fragen Sie nach konkreten Dokumenten wie 'Schenkungsanmeldung' oder 'Wertermittlung'", "hint"
-        )
-        self._print_styled("• Tippen Sie 'Hilfe' für weitere Hinweise", "hint")
-        self._print_styled("• Tippen Sie 'beenden', um das Spiel zu verlassen", "hint")
+        self._print_styled("• Fragen Sie nach konkreten Dokumenten wie 'Schenkungsanmeldung' oder 'Wertermittlung'", "hint")
+        self._print_styled("• Nutzen Sie Slash-Befehle wie /hilfe, /status, /beenden oder /gehe_zu <Name> für wichtige Aktionen", "hint")
 
         # Show an example
         self._print_styled(
@@ -246,38 +244,7 @@ class GameEngine:
         # Handle basic commands
         user_input_lower = user_input.lower()
 
-        # Exit command
-        if user_input_lower in ["beenden", "exit", "quit"]:
-            self._print_styled("Sie verlassen frustriert das Amt. Auf Wiedersehen!", "italic")
-            self.game_over = True
-            return False
-
-        # Help command
-        if user_input_lower in ["hilfe", "help", "?", "was soll ich tun", "was kann ich tun"]:
-            self.show_help()
-            return True
-
-        # Status command
-        if user_input_lower in ["status", "fortschritt", "dokumente", "unterlagen"]:
-            docs = (
-                ", ".join(list(self.game_state.collected_documents.keys()))
-                if self.game_state.collected_documents
-                else "keine"
-            )
-            evidence = (
-                ", ".join(list(self.game_state.evidence_provided.keys()))
-                if self.game_state.evidence_provided
-                else "keine"
-            )
-
-            self._print_styled("\n=== IHR AKTUELLER STAND ===", "title")
-            self._print_styled(f"Abteilung: {self.game_state.current_department}", "info")
-            self._print_styled(f"Beamter: {self.active_bureaucrat.name}", "info")
-            self._print_styled(f"Dokumente: {docs}", "info")
-            self._print_styled(f"Nachweise: {evidence}", "info")
-            self._print_styled(f"Frustration: {self.game_state.frustration_level}/10", "info")
-            self._print_styled(f"Fortschritt: {self.game_state.progress}%", "info")
-            return True
+        # command handling for exit, help, and status is now managed elsewhere
 
         # Check for winning condition
         if self.check_win_condition():
@@ -1057,29 +1024,8 @@ class GameEngine:
         self.game_state.increase_frustration(2)
 
     def _process_keywords(self, user_input: str):
-        """Process keywords in user input"""
-        input_lower = user_input.lower()
-
-        # Check for document requests
-        for doc_name in DOCUMENTS:
-            if doc_name.lower() in input_lower:
-                self._handle_document_request(doc_name)
-                return
-
-        # Check for evidence submission
-        for evidence_name, evidence_data in EVIDENCE.items():
-            if evidence_name.lower() in input_lower:
-                for form in evidence_data["acceptable_forms"]:
-                    if form.lower() in input_lower:
-                        self._handle_evidence_submission(evidence_name, form)
-                        return
-
-        # Check for procedure keywords
-        for proc_name, proc_data in PROCEDURES.items():
-            for keyword in proc_data["keywords"]:
-                if keyword.lower() in input_lower:
-                    self._handle_procedure_action(proc_name)
-                    return
+        """(deprecated) previously handled command keywords here; now handled elsewhere"""
+        pass
 
     def _handle_document_request(self, document_name: str):
         """Handle a request for a specific document"""
