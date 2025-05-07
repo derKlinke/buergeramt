@@ -1,10 +1,9 @@
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 
 import yaml
 
-from .models import (Document, Evidence, GameConfig, Persona, PersonaExample,
-                     Procedure)
+from .models import Document, Evidence, GameConfig, Persona, PersonaConfig, PersonaDefaults, Procedure
 
 CONFIG_PATH = Path(__file__).parent / "config.yaml"
 
@@ -28,40 +27,52 @@ def load_config() -> GameConfig:
     for pid, data in raw.get("procedures", {}).items():
         procs[pid] = Procedure(id=pid, **data)
 
+    # Initialize defaults
+    persona_defaults = PersonaDefaults()
+    if "persona_defaults" in raw:
+        # Update defaults with values from config if provided
+        persona_defaults = PersonaDefaults(**raw["persona_defaults"])
+
     # parse personas
     pers: Dict[str, Persona] = {}
     for persona_id, data in raw.get("personas", {}).items():
-        # parse examples
-        examples: List[PersonaExample] = [PersonaExample(**ex) for ex in data.get("examples", [])]
-        attrs = {k: v for k, v in data.items() if k != "examples"}
-        persona = Persona(id=persona_id, examples=examples, **attrs)
+        # Create a raw PersonaConfig object
+        persona_config = PersonaConfig(**data)
 
-        # Fail if required fields are missing
-        missing = []
-        for field in [
-            "name",
-            "role",
-            "department",
-            "personality",
-            "handled_documents",
-            "required_evidence",
-            "examples",
-            "system_prompt_template",
-            "behavioral_rules",
-        ]:
-            if getattr(persona, field, None) is None:
-                missing.append(field)
-        if missing:
-            raise ValueError(f"Persona '{persona_id}' is missing required fields: {', '.join(missing)}")
-
+        # Generate the complete Persona with defaults filled in
+        persona = create_persona_from_config(persona_id, persona_config, persona_defaults)
         pers[persona_id] = persona
 
     # build config
-    config = GameConfig(documents=docs, evidence=evs, procedures=procs, personas=pers)
+    config = GameConfig(
+        documents=docs, evidence=evs, procedures=procs, personas=pers, persona_defaults=persona_defaults
+    )
     return config
+
+
+def create_persona_from_config(persona_id: str, config: PersonaConfig, defaults: PersonaDefaults) -> Persona:
+    """Create a complete Persona object from a minimal config, filling in defaults."""
+    # Apply defaults for optional fields if not provided
+    behavioral_rules = config.behavioral_rules or defaults.behavioral_rules
+    system_prompt_template = config.system_prompt_template or defaults.system_prompt_template
+
+    # Build the complete persona
+    return Persona(
+        id=persona_id,
+        name=config.name,
+        role=config.role,
+        department=config.department,
+        personality=config.personality,
+        handled_documents=config.handled_documents,
+        required_evidence=config.required_evidence,
+        behavioral_rules=behavioral_rules,
+        system_prompt_template=system_prompt_template,
+    )
+
 
 # singleton config
 _cfg: GameConfig = None
+
 
 def get_config() -> GameConfig:
     global _cfg

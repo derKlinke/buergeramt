@@ -1,6 +1,6 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # model for a document definition
@@ -28,13 +28,23 @@ class Procedure(BaseModel):
     department: str
 
 
-# model for a persona definition
-class PersonaExample(BaseModel):
-    user: str
-    assistant: str
+class PersonaConfig(BaseModel):
+    """Raw persona config from YAML file - minimal required fields"""
+
+    name: str
+    role: str
+    department: str
+    personality: List[str]
+    handled_documents: List[str]
+    required_evidence: List[str]
+    # Optional fields - will be filled with defaults if not provided
+    behavioral_rules: Optional[List[str]] = None
+    system_prompt_template: Optional[str] = None
 
 
 class Persona(BaseModel):
+    """Complete persona with all required fields populated"""
+
     id: str
     name: str
     role: str
@@ -42,9 +52,21 @@ class Persona(BaseModel):
     system_prompt_template: str
     personality: List[str]
     behavioral_rules: List[str]
-    examples: List[PersonaExample]
     handled_documents: List[str]
     required_evidence: List[str]
+
+
+# Default templates and values for personas
+class PersonaDefaults(BaseModel):
+    system_prompt_template: str = """
+## ROLE: {name}, {role}, Deutsche Finanzamtsbehörde (Abteilung {department})
+## YOUR PERSONALITY
+{personality}
+## GAME CONTEXT
+- Your department issues: {handled_documents}
+- Required evidence: {required_evidence}
+"""
+    behavioral_rules: List[str] = ["NEVER break character", "ALWAYS keep responses under 100 words"]
 
 
 # overall game configuration
@@ -53,3 +75,4 @@ class GameConfig(BaseModel):
     evidence: Dict[str, Evidence]
     procedures: Dict[str, Procedure]
     personas: Dict[str, Persona]
+    persona_defaults: PersonaDefaults = Field(default_factory=PersonaDefaults)

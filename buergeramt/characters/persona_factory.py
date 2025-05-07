@@ -1,5 +1,3 @@
-from typing import List
-
 from buergeramt.characters.bureaucrat import Bureaucrat
 from buergeramt.rules.loader import get_config
 from buergeramt.rules.models import Persona
@@ -12,12 +10,14 @@ def build_bureaucrat(persona_id: str) -> Bureaucrat:
         raise KeyError(f"Persona '{persona_id}' not found in config")
     p: Persona = config.personas[persona_id]
 
-    # render personality list
+    # Format personality list for the system prompt
     personality_text = "\n".join(f"- {trait}" for trait in p.personality)
+
+    # Format handled documents and required evidence as comma-separated lists
     handled_docs = ", ".join(p.handled_documents)
     required_evidence = ", ".join(p.required_evidence)
 
-    # build system prompt
+    # Build system prompt using the template
     system_prompt = p.system_prompt_template.format(
         name=p.name,
         role=p.role,
@@ -27,13 +27,10 @@ def build_bureaucrat(persona_id: str) -> Bureaucrat:
         required_evidence=required_evidence,
     )
 
-    # map examples
-    examples: List[dict] = [{"user": ex.user, "assistant": ex.assistant} for ex in p.examples]
-
+    # Create and return the Bureaucrat instance
     return Bureaucrat(
         name=p.name,
         title=p.role,
         department=p.department,
         system_prompt=system_prompt,
-        example_interactions=examples,
     )
