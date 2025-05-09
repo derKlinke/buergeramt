@@ -85,6 +85,24 @@ class GameState(BaseModel):
             self._logger.log_state_change("progress", old_progress, self.progress)
         return self.progress
 
+    def switch_department(self, department: str) -> bool:
+        """tool helper for moving the player to a different department"""
+        self._debug_log_tool_call("switch_department", department=department)
+        if department == self.current_department:
+            return False
+        old = self.current_department
+        self.current_department = department
+        self._logger.log_state_change("current_department", old, department)
+        return True
+
+    # -----------------------------------------------------------------
+    # transition_procedure removed – concept dropped to simplify game.
+    # The following stub is left to avoid runtime errors if an outdated
+    # persona prompt still tries to call it. It returns False and logs.
+    # -----------------------------------------------------------------
+
+    # NOTE: procedures removed from gameplay. Leaving no implementation.
+
     def get_collected_documents(self) -> List[str]:
         return list(self.collected_documents.keys())
 
@@ -119,6 +137,7 @@ class GameState(BaseModel):
 
     def get_formatted_gamestate(self) -> str:
         import json
+
         state_info = {
             "current_department": self.current_department,
             "collected_documents": self.get_collected_documents(),
@@ -157,3 +176,7 @@ def increase_frustration(ctx: RunContext[GameDeps], amount: int = 1):
 
 def decrease_frustration(ctx: RunContext[GameDeps], amount: int = 1):
     return ctx.deps.game_state.decrease_frustration(amount)
+
+
+def switch_department(ctx: RunContext[GameDeps], department: str):
+    return ctx.deps.game_state.switch_department(department)

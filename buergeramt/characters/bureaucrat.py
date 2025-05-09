@@ -2,11 +2,17 @@ import os
 
 from dotenv import load_dotenv
 from pydantic_ai import Agent
+from pydantic_ai import Tool
 
 from buergeramt.characters.agent_response import AgentResponse
-from buergeramt.rules.game_state import (GameDeps, add_document, add_evidence,
-                                         decrease_frustration,
-                                         increase_frustration)
+from buergeramt.rules.game_state import (
+    GameDeps,
+    add_document,
+    add_evidence,
+    decrease_frustration,
+    increase_frustration,
+    switch_department,
+)
 from buergeramt.utils.game_logger import get_logger
 
 
@@ -47,6 +53,7 @@ class Bureaucrat:
                     "- add_evidence(evidence_name: str, evidence_form: str)\n"
                     "- increase_frustration(amount: int = 1)\n"
                     "- decrease_frustration(amount: int = 1)\n"
+                    "- switch_department(department: str)\n"
                     "---\n"
                 )
                 self.system_prompt = (
@@ -65,31 +72,35 @@ class Bureaucrat:
         else:
             self.system_prompt = system_prompt
 
-        # --- Tool registration for agent ---
-        try:
-            from pydantic_ai import Tool
-        except ImportError:
-            Tool = None
-        tools = []
-        if Tool is not None:
-            tools.append(
-                Tool(add_document, name="add_document", description="Add a document to the player's collection")
-            )
-            tools.append(Tool(add_evidence, name="add_evidence", description="Add evidence to the player's collection"))
-            tools.append(
-                Tool(
-                    increase_frustration,
-                    name="increase_frustration",
-                    description="Increase the player's frustration level",
-                )
-            )
-            tools.append(
-                Tool(
-                    decrease_frustration,
-                    name="decrease_frustration",
-                    description="Decrease the player's frustration level",
-                )
-            )
+        tools = [
+            Tool(
+                add_document,
+                name="add_document",
+                description="Add a document to the player's collection",
+            ),
+            Tool(
+                add_evidence,
+                name="add_evidence",
+                description="Add evidence to the player's collection",
+            ),
+            Tool(
+                increase_frustration,
+                name="increase_frustration",
+                description="Increase the player's frustration level",
+            ),
+            Tool(
+                decrease_frustration,
+                name="decrease_frustration",
+                description="Decrease the player's frustration level",
+            ),
+            Tool(
+                switch_department,
+                name="switch_department",
+                description="Move the player to another department",
+            ),
+        ]
+
+        self.logger = get_logger()
 
         load_dotenv()
         api_key = os.environ.get("OPENAI_API_KEY")
@@ -105,7 +116,6 @@ class Bureaucrat:
             tools=tools,
         )
 
-        self.logger = get_logger()
         self.logger.logger.info(f"Initialized bureaucrat: {name}, {title} ({department})")
         print(f"Using {self.agent.model} for {name}")
 
@@ -138,11 +148,8 @@ class Bureaucrat:
                 self.logger.log_ai_response(result.response)
 
             self.last_message = result
-            response_text = result.output.response_text
-
-            return response_text
+            return getattr(result.output, "response_text", str(result))
         except Exception as e:
-            error_msg = f"API Error (text): {e}"
-            print(error_msg)
+            error_msg = f"API Error: {e}"
             self.logger.log_error(e, f"AI response error for '{query}' from {self.name}")
-            raise RuntimeError("AI agent failed to respond.")
+            raise RuntimeError(error_msg)

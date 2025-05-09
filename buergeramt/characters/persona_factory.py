@@ -79,6 +79,7 @@ def build_bureaucrat(persona_id: str) -> Bureaucrat:
         "- add_evidence(evidence_name: str, evidence_form: str)\n"
         "- increase_frustration(amount: int = 1)\n"
         "- decrease_frustration(amount: int = 1)\n"
+        "- switch_department(department: str)\n"
         "---\n"
     )
     system_prompt = (

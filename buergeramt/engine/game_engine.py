@@ -105,6 +105,10 @@ class GameEngine:
         # Use dependency injection for agent call
         response_text = self.agent_router.get_active_bureaucrat().respond(user_input, self.game_state)
         self._print_styled(response_text, "bureaucrat")
+
+        # if the active department has changed due to a tool call, transition
+        if self.game_state.current_department != self.agent_router.active_bureaucrat.department:
+            self.agent_router.transition_to_department(self.game_state.current_department, print_styled=self._print_styled)
         if self.game_state.attempts % 5 == 0:
             self._print_styled(
                 "\nTipp: Tippen Sie 'hilfe' für Spieltipps oder 'status' für Ihren aktuellen Stand.", "hint"
