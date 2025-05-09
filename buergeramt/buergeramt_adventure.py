@@ -144,6 +144,9 @@ def main():
             break
     if hasattr(game, "win_condition") and game.win_condition:
         print("\nGlückwunsch! Sie haben das deutsche Bürokratiesystem besiegt.")
+        print("\n" + "*" * 60)
+        print("***  Aljoscha und Fabian laden dich, Sasha, zu einem Dinner-Abend im 'Fa:me ein!  ***")
+        print("*" * 60 + "\n")
     else:
         print("\nVielen Dank für Ihren Besuch im Finanzamt. Kommen Sie bald wieder.")
 
