@@ -4,14 +4,10 @@ from dotenv import load_dotenv
 from pydantic_ai import Agent
 
 from buergeramt.characters.agent_response import AgentResponse
-from buergeramt.rules.game_state import (
-    GameDeps,
-    add_document,
-    add_evidence,
-    decrease_frustration,
-    increase_frustration,
-    transition_procedure,
-)
+from buergeramt.rules.game_state import (GameDeps, add_document, add_evidence,
+                                         decrease_frustration,
+                                         increase_frustration,
+                                         transition_procedure)
 from buergeramt.utils.game_logger import get_logger
 
 
@@ -118,9 +114,11 @@ class Bureaucrat:
         self.logger.logger.info(f"Initialized bureaucrat: {name}, {title} ({department})")
         print(f"Using {self.agent.model} for {name}")
 
-    def introduce(self) -> str:
+    def introduce(self, game_state) -> str:
+        deps = GameDeps(game_state=game_state)
         result = self.agent.run_sync(
-            "Wie heißen Sie?",
+            "The user has just entered your office. Introduce yourself and your role and ask what you can help them with.",
+            deps=deps
         )
         return result.output.response_text
 

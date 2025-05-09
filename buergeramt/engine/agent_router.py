@@ -73,7 +73,7 @@ class AgentRouter:
         self.game_state.current_department = department
         self.active_bureaucrat = self.bureaucrats[department]
         if print_styled:
-            print_styled(f"\n{self.active_bureaucrat.introduce()}", "bureaucrat")
+            print_styled(f"\n{self.active_bureaucrat.introduce(game_state=self.game_state)}", "bureaucrat")
             if len(self.game_state.collected_documents) > 0:
                 doc_list = ", ".join(list(self.game_state.collected_documents.keys()))
                 print_styled(f"Ich sehe, Sie haben bereits folgende Dokumente: {doc_list}.", "bureaucrat")

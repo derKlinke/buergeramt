@@ -72,8 +72,7 @@ class GameEngine:
         time.sleep(1)
 
         # First bureaucrat introduces themselves
-        self._print_styled(f"\n{self.agent_router.get_active_bureaucrat().introduce()}", "bureaucrat")
-        self._print_styled("Wie kann ich Ihnen behilflich sein?", "bureaucrat")
+        self._print_styled(f"\n{self.agent_router.get_active_bureaucrat().introduce(game_state=self.game_state)}", "bureaucrat")
 
 
 
