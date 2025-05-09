@@ -16,6 +16,7 @@ class Bureaucrat:
         self.name = name
         self.title = title
         self.department = department
+        self.last_message = None
 
         if system_prompt is None:
             from buergeramt.rules.loader import get_config
@@ -118,8 +119,10 @@ class Bureaucrat:
         deps = GameDeps(game_state=game_state)
         result = self.agent.run_sync(
             "The user has just entered your office. Introduce yourself and your role and ask what you can help them with.",
-            deps=deps
+            deps=deps,
+            message_history=self.last_message.all_messages() if self.last_message else None,
         )
+        self.last_message = result
         return result.output.response_text
 
     def respond(self, query, game_state) -> str:
@@ -132,6 +135,7 @@ class Bureaucrat:
             result = self.agent.run_sync(
                 query,
                 deps=deps,
+                message_history=self.last_message.all_messages() if self.last_message else None,
             )
 
             if hasattr(result, "messages"):
@@ -139,6 +143,7 @@ class Bureaucrat:
             if hasattr(result, "response"):
                 self.logger.log_ai_response(result.response)
 
+            self.last_message = result
             response_text = result.output.response_text
 
             return response_text

@@ -72,14 +72,12 @@ class GameEngine:
         time.sleep(1)
 
         # First bureaucrat introduces themselves
-        self._print_styled(f"\n{self.agent_router.get_active_bureaucrat().introduce(game_state=self.game_state)}", "bureaucrat")
-
-
+        self._print_styled(
+            f"\n{self.agent_router.get_active_bureaucrat().introduce(game_state=self.game_state)}", "bureaucrat"
+        )
 
     def switch_agent(self, agent_name: str) -> bool:
         return self.agent_router.switch_agent(agent_name, print_styled=self._print_styled)
-
-
 
     def process_input(self, user_input: str) -> bool:
         if getattr(self, "game_over", True):
@@ -152,10 +150,6 @@ class GameEngine:
 
         return primary_condition_met or frustration_condition_met
 
-
-
-
-
     def _print_styled(self, text: str, style: str):
         """Print text with styling based on the style parameter"""
         # Log UI message
@@ -197,4 +191,3 @@ class GameEngine:
 
         # Small delay for better readability
         time.sleep(0.1)
-
