@@ -4,10 +4,14 @@ from dotenv import load_dotenv
 from pydantic_ai import Agent
 
 from buergeramt.characters.agent_response import AgentResponse
-from buergeramt.rules.game_state import (GameDeps, add_document, add_evidence,
-                                         decrease_frustration,
-                                         increase_frustration,
-                                         transition_procedure)
+from buergeramt.rules.game_state import (
+    GameDeps,
+    add_document,
+    add_evidence,
+    decrease_frustration,
+    increase_frustration,
+    transition_procedure,
+)
 from buergeramt.utils.game_logger import get_logger
 
 
