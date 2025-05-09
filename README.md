@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="thumbnail.png" alt="Bürgeramt Adventure Thumbnail"/>
+</p>
+
 # Bürgeramt Adventure: Schenkungssteuer Edition
 
 A text-based adventure game powered by AI that simulates the experience of navigating German bureaucracy to process a gift tax (Schenkungssteuer) application.
