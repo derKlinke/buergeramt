@@ -32,18 +32,23 @@ class GameState(BaseModel):
         self._logger.log_game_state("Initializing new game state")
         self._logger.log_game_state(self)
 
-    def add_document(self, document_name: str) -> bool:
+    def add_document(self, document_name: str) -> str:
         self._debug_log_tool_call("add_document", document_name=document_name)
         docs = self.config.documents
-        if document_name in docs:
-            self.collected_documents[document_name] = docs[document_name]
+        if document_name not in docs:
+            self._logger.log_error(ValueError(f"Document '{document_name}' not found in config"), "add_document")
+            return f"Dokument '{document_name}' ist nicht bekannt."
+        doc = docs[document_name]
+        missing_reqs = [req for req in doc.requirements if req not in self.evidence_provided]
+        if missing_reqs:
+            missing_str = ", ".join(missing_reqs)
+            return f"Sie müssen zuerst folgende Nachweise vorlegen: {missing_str}."
+        self.collected_documents[document_name] = doc
 
-            print(f"Document '{document_name}' added to collected documents.")
+        print(f"Document '{document_name}' added to collected documents.")
 
-            self._logger.log_document_acquired(document_name)
-            return True
-        self._logger.log_error(ValueError(f"Document '{document_name}' not found in config"), "add_document")
-        return False
+        self._logger.log_document_acquired(document_name)
+        return f"Dokument '{document_name}' wurde erfolgreich hinzugefügt."
 
     def add_evidence(self, evidence_name: str, evidence_form: str) -> bool:
         self._debug_log_tool_call("add_evidence", evidence_name=evidence_name, evidence_form=evidence_form)
