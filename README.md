@@ -63,8 +63,6 @@ Interact with the bureaucrats by having natural conversations. Try:
 - Moving between departments (e.g., "Ich möchte zu Herrn Weber")
 - Asking for help (e.g., "Was muss ich als nächstes tun?")
 
-Use the "hilfe" or "status" commands to get guidance during gameplay.
-
 Your goal is to successfully navigate the system and get your gift tax application processed.
 
 ## Tips
@@ -75,14 +73,6 @@ Your goal is to successfully navigate the system and get your gift tax applicati
 - Get creative when stuck - sometimes unorthodox approaches work
 - Express frustration to get more helpful responses (especially from Herr Weber)
 - Remember that German bureaucracy is not designed to be efficient!
-
-## Requirements
-
-- Python 3.8 or higher
-- OpenAI API key
-- Required Python packages:
-  - `openai` (version 1.0.0 or higher)
-  - `python-dotenv`
 
 ## Installation
 
@@ -99,18 +89,6 @@ Your goal is to successfully navigate the system and get your gift tax applicati
 
    ```shell
    pip install -r requirements.txt
-   ```
-
-3. Set up your OpenAI API key:
-
-   ```shell
-   export OPENAI_API_KEY=your_api_key_here
-   ```
-
-   Alternatively, you can create a `.env` file in the project root with:
-
-   ```shell
-   OPENAI_API_KEY=your_api_key_here
    ```
 
 ## License
