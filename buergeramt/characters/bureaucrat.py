@@ -1,214 +1,151 @@
-from buergeramt.characters.agent import Agent
+import os
+
+from dotenv import load_dotenv
+from pydantic_ai import Agent
+
 from buergeramt.characters.agent_response import AgentResponse
-from buergeramt.characters.context_manager import ContextManager
-from buergeramt.characters.message_builder import MessageBuilder
+from buergeramt.rules.game_state import (
+    GameDeps,
+    add_document,
+    add_evidence,
+    decrease_frustration,
+    increase_frustration,
+    transition_procedure,
+)
 from buergeramt.utils.game_logger import get_logger
 
 
 class Bureaucrat:
-    def __init__(self, name, title, department, system_prompt, api_key=None):
+    def __init__(self, name, title, department, system_prompt=None):
         self.name = name
         self.title = title
         self.department = department
-        self.system_prompt = system_prompt
-        self.context_manager = ContextManager()
-        from buergeramt.characters.agent_response import AgentResponse
 
-        # initialize agent with base system prompt (persona template)
+        if system_prompt is None:
+            from buergeramt.rules.loader import get_config
+
+            config = get_config()
+            persona = None
+
+            for p in config.personas.values():
+                if p.name == name and p.role == title and p.department == department:
+                    persona = p
+                    break
+
+            if persona is not None:
+                personality_text = "\n".join(f"- {trait}" for trait in persona.personality)
+                handled_docs = ", ".join(persona.handled_documents)
+                required_evidence = ", ".join(persona.required_evidence)
+                tool_instructions = (
+                    "\n---\n"
+                    "You have access to the following tools for updating the game state. Whenever the user provides a document, evidence, or requests a procedure change, always use the appropriate tool. Do not just mention the action, always call the tool.\n"
+                    "\n"
+                    "Tool usage examples:\n"
+                    "- If the user says 'Hier ist mein Personalausweis', call add_evidence with evidence_name='valid_id', evidence_form='Personalausweis'.\n"
+                    "- If the user says 'Ich reiche die Schenkungsanmeldung ein', call add_document with document_name='Schenkungsanmeldung'.\n"
+                    "- If the user says 'Ich möchte zur nächsten Abteilung', call transition_procedure with next_procedure='<target_procedure>'.\n"
+                    "- If the user expresses frustration (e.g., 'Das ist doch lächerlich!'), call increase_frustration.\n"
+                    "- If the user calms down, call decrease_frustration.\n"
+                    "\n"
+                    "Tool reference:\n"
+                    "- add_document(document_name: str)\n"
+                    "- add_evidence(evidence_name: str, evidence_form: str)\n"
+                    "- transition_procedure(next_procedure: str)\n"
+                    "- increase_frustration(amount: int = 1)\n"
+                    "- decrease_frustration(amount: int = 1)\n"
+                    "---\n"
+                )
+                self.system_prompt = (
+                    persona.system_prompt_template.format(
+                        name=persona.name,
+                        role=persona.role,
+                        department=persona.department,
+                        personality=personality_text,
+                        handled_documents=handled_docs,
+                        required_evidence=required_evidence,
+                    )
+                    + tool_instructions
+                )
+            else:
+                self.system_prompt = "You are a helpful bureaucrat. Always use tools to update the game state."
+        else:
+            self.system_prompt = system_prompt
+
+        # --- Tool registration for agent ---
+        try:
+            from pydantic_ai import Tool
+        except ImportError:
+            Tool = None
+        tools = []
+        if Tool is not None:
+            tools.append(
+                Tool(add_document, name="add_document", description="Add a document to the player's collection")
+            )
+            tools.append(Tool(add_evidence, name="add_evidence", description="Add evidence to the player's collection"))
+            tools.append(
+                Tool(transition_procedure, name="transition_procedure", description="Transition to a new procedure")
+            )
+            tools.append(
+                Tool(
+                    increase_frustration,
+                    name="increase_frustration",
+                    description="Increase the player's frustration level",
+                )
+            )
+            tools.append(
+                Tool(
+                    decrease_frustration,
+                    name="decrease_frustration",
+                    description="Decrease the player's frustration level",
+                )
+            )
+
+        load_dotenv()
+        api_key = os.environ.get("OPENAI_API_KEY")
+        if not api_key:
+            raise RuntimeError(
+                "OPENAI_API_KEY is not set in the environment. Please create a .env file or set the variable!"
+            )
+
         self.agent = Agent(
-            api_key=api_key,
+            "openai:gpt-4o-mini",
             system_prompt=self.system_prompt,
             output_type=AgentResponse,
+            tools=tools,
         )
-        self.message_builder = MessageBuilder(self.system_prompt, self.context_manager)
+
         self.logger = get_logger()
         self.logger.logger.info(f"Initialized bureaucrat: {name}, {title} ({department})")
-        print(f"Using {self.agent.get_model()} for {name}")
+        print(f"Using {self.agent.model} for {name}")
 
     def introduce(self) -> str:
-        return f"Mein Name ist {self.name}, {self.title} der Abteilung {self.department}."
-
-    def _get_stage_guidance(self, game_state):
-        """Get guidance based on current game stage"""
-        # No documents yet
-        if not game_state.collected_documents:
-            return "The user is in the early stage and needs to submit initial documents. As the Erstbearbeitung, you should ask for ID and gift details."
-
-        # Has Schenkungsanmeldung but no Wertermittlung
-        if (
-            "Schenkungsanmeldung" in game_state.collected_documents
-            and "Wertermittlung" not in game_state.collected_documents
-        ):
-            return "The user has the initial application but needs valuation. As Fachprüfung, you should request market comparison and expert opinion."
-
-        # Has Wertermittlung but no Freibetragsbescheinigung
-        if (
-            "Wertermittlung" in game_state.collected_documents
-            and "Freibetragsbescheinigung" not in game_state.collected_documents
-        ):
-            return "The user has valuation but needs exemption certificate. As Abschlussstelle, you should ask for relationship proof and previous gifts."
-
-        # Has most documents but not final one
-        if (
-            "Freibetragsbescheinigung" in game_state.collected_documents
-            and "Zahlungsaufforderung" not in game_state.collected_documents
-        ):
-            return "The user is in the final stage and needs payment request. Return to Erstbearbeitung for final processing."
-
-        return None
-
-    def respond(self, query, game_state) -> AgentResponse:
-        """
-        respond to user input and return structured output for the game engine to process.
-        output is always an AgentResponse instance (enforced by pydantic).
-        if the agent cannot respond (e.g. no api key or error), raise an exception.
-        """
-        if not self.agent.has_api_key():
-            raise RuntimeError("AI agent is not available: missing API key.")
-
-        # detailed instructions for JSON-structured response
-        system_instruction = (
-            "You are a bureaucratic AI agent in a German administrative adventure game. "
-            "Analyze the user's input in the context of the current game state. "
-            "Always respond with a JSON object in the following format: "
-            "{ 'response_text': <text>, 'actions': { "
-            "'intent': <intent>, 'document': <document>, 'requirements_met': <bool>, "
-            "'evidence': <list>, 'department': <str>, 'procedure': <procedure>, 'next_procedure': <next_procedure>, "
-            "'procedure_transition': <bool>, 'valid': <bool>, 'message': <str> } } "
-            
-            "Possible values for intent: 'request_document', 'provide_evidence', 'switch_department', "
-            "'procedure_transition', 'greeting', 'other'. "
-            
-            "If the user requests a document, check if all requirements are met and set 'requirements_met' accordingly. "
-            "If the user provides evidence, list it in 'evidence'. "
-            "If the user wants to switch department, set 'department'. "
-            
-            "PROCEDURE HANDLING: "
-            "If the user's interaction suggests a bureaucratic procedure change, set: "
-            "- 'procedure_transition': true "
-            "- 'next_procedure': to one of the valid next procedures from the current game state "
-            "Valid next procedures are provided in the game state information. "
-            "Look for keywords matching procedure descriptions to determine if a transition is appropriate. "
-            
-            "EVIDENCE HANDLING: "
-            "When user provides evidence in their input, identify specific evidence types from this list: "
-            "- valid_id: Personal identification (Personalausweis, Reisepass, Aufenthaltstitel) "
-            "- gift_details: Gift documentation (notarielle Urkunde, Übergabeprotokoll, Bankbeleg) "
-            "- residence_proof: Residence proof (Meldebescheinigung, Mietvertrag, Grundbuchauszug) "
-            "- market_comparison: Market value evidence (Marktwertanalyse, Vergleichspreise) "
-            "- expert_opinion: Expert valuation (Gutachten, Wertgutachten, Sachverständigengutachten) "
-            "- relationship_proof: Relationship documentation (Freundschaftserklärung, Verwandtschaftsnachweis) "
-            "- previous_gifts: Previous gifts declaration (Eigenerklärung, frühere Steuerbescheide) "
-            "- steuernummer: Tax number documentation (Steuer-ID, Steuerbescheid) "
-            
-            "When user mentions evidence, identify the correct evidence ID from the list above and return it in the evidence field. "
-            "Example: If user says 'Hier ist mein Personalausweis', return 'valid_id' in the evidence list. "
-            
-            "Each procedure has specific keywords and characteristics: "
-            "- Antragstellung: Initial application submission - use when user starts a new process "
-            "- Formularprüfung: Form verification - use when checking documents for correctness "
-            "- Nachweisanforderung: Request for evidence - use when asking for specific documents "
-            "- Terminvereinbarung: Scheduling appointments - use when discussing meeting times "
-            "- Weiterleitung: Forwarding to other departments - use when redirecting the user "
-            "- Warteschleife: Waiting period - use when the user must wait "
-            "- Bescheiderteilung: Decision issuance - use when making official decisions "
-            "- Widerspruch: Formal objection - use when user objects to decisions "
-            "- Zahlungsaufforderung: Payment request - use when requesting payment "
-            "- Abschluss: Process completion - use for finalizing the process "
-            
-            "If the input is invalid or incomplete, set 'valid' to false and explain in 'message'. "
-            "Keep 'response_text' as your in-character reply to the user. "
-            "If a field is not relevant, set it to null or an empty list."
+        result = self.agent.run_sync(
+            "Wie heißen Sie?",
         )
-        game_state_info = game_state.get_formatted_gamestate()
+        return result.output.response_text
+
+    def respond(self, query, game_state) -> str:
+        """
+        respond to user input and return only a text response for the game engine to process.
+        all game state changes must be handled by tool calls from the model, not by parsing output.
+        """
+        deps = GameDeps(game_state=game_state)
         try:
-            # run agent synchronously with structured output
-            result = self.agent.run(
+            result = self.agent.run_sync(
                 query,
-                system_prompt=system_instruction,
-                max_tokens=200,
-                temperature=0,
+                deps=deps,
             )
-            # log prompt and raw response if available
+
             if hasattr(result, "messages"):
                 self.logger.log_ai_prompt(result.messages)
             if hasattr(result, "response"):
                 self.logger.log_ai_response(result.response)
-            # extract parsed output
-            agent_response = result.output
-            # log structured actions
-            self.logger.log_agent_action(agent_response.actions.dict())
-            # update context and return
-            self.context_manager.add_exchange(query, agent_response.response_text)
-            return agent_response
+
+            response_text = result.output.response_text
+
+            return response_text
         except Exception as e:
-            error_msg = f"API Error (structured): {e}"
+            error_msg = f"API Error (text): {e}"
             print(error_msg)
             self.logger.log_error(e, f"AI response error for '{query}' from {self.name}")
             raise RuntimeError("AI agent failed to respond.")
-
-    def update_context(self, game_state):
-        """Update the bureaucrat's context with current game state information"""
-        # Get procedure information
-        current_proc = game_state.current_procedure
-        proc_desc = game_state.get_procedure_description() or "Unknown procedure"
-        
-        # Add a context note about the current procedure
-        context_note = f"CURRENT PROCEDURE: {current_proc} - {proc_desc}"
-        
-        # Get keywords for the current procedure
-        keywords = game_state.get_procedure_keywords()
-        if keywords:
-            keywords_str = ", ".join(keywords)
-            context_note += f"\nKEYWORDS: {keywords_str}"
-        
-        # Get valid next procedures
-        next_steps = game_state.get_valid_next_procedures()
-        if next_steps:
-            next_steps_str = ", ".join(next_steps)
-            context_note += f"\nPOSSIBLE NEXT STEPS: {next_steps_str}"
-        
-        # Add this context note to the bureaucrat's memory
-        self.context_manager.add_system_note(context_note)
-    
-    def give_hint(self, game_state):
-        """Provide a helpful hint to the user based on current game state"""
-        if not self.agent.has_api_key():
-            raise RuntimeError("AI agent is not available: missing API key.")
-        
-        # Update context before giving hint
-        self.update_context(game_state)
-        
-        state_info = game_state.get_formatted_gamestate()
-        prompt = f"""
-        As {self.name}, provide a hint to the user about their next steps.
-
-        Game state: {state_info}
-
-        You are currently in the '{game_state.current_procedure}' procedure.
-        Valid next procedures are: {', '.join(game_state.get_valid_next_procedures())}
-        
-        Based on your bureaucratic personality, what hint would you give?
-        Keep it brief (1-2 sentences) and in character.
-        """
-        try:
-            # run agent synchronously for free-form hint
-            result = self.agent.run(
-                prompt,
-                output_type=None,
-                max_tokens=100,
-                temperature=0.7,
-            )
-            # log prompt and raw response
-            self.logger.log_ai_prompt(result.messages)
-            self.logger.log_ai_response(result.response)
-            # extract hint text
-            hint = result.output
-            self.logger.logger.info(f"HINT from {self.name}: {hint}")
-
-            return hint
-        except Exception as e:
-            error_msg = f"API Error in give_hint: {e}"
-            print(error_msg)
-            self.logger.log_error(e, "give_hint")
-            raise RuntimeError("AI agent failed to provide a hint.")

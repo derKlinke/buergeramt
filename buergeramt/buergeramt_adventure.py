@@ -99,6 +99,7 @@ def setup_commands(game):
 
 def main():
     load_dotenv()
+
     parser = argparse.ArgumentParser(description="Bürgeramt Adventure: Schenkungssteuer Edition")
     parser.add_argument("--api-key", help="OpenAI API key")
     args = parser.parse_args()
@@ -153,8 +154,3 @@ def run():
         main()
     except KeyboardInterrupt:
         print("\nBeenden des Programms...")
-    except Exception as e:
-        print(f"Ein unerwarteter Fehler ist aufgetreten: {e}")
-        import traceback
-
-        traceback.print_exc()
