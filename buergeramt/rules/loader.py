@@ -4,7 +4,8 @@ from typing import Dict
 import yaml
 
 from buergeramt.rules.game_config import GameConfig
-from buergeramt.rules.models import Document, Evidence, PersonaConfig, PersonaDefaults, Procedure
+from buergeramt.rules.models import (Document, Evidence, PersonaConfig,
+                                     PersonaDefaults)
 from buergeramt.rules.persona import Persona
 
 CONFIG_PATH = Path(__file__).parent / "config.yaml"
@@ -24,11 +25,6 @@ def load_config() -> GameConfig:
     for ev_id, data in raw.get("evidence", {}).items():
         evs[ev_id] = Evidence(id=ev_id, **data)
 
-    # parse procedures
-    procs: Dict[str, Procedure] = {}
-    for pid, data in raw.get("procedures", {}).items():
-        procs[pid] = Procedure(id=pid, **data)
-
     # Require persona_defaults in YAML
     if "persona_defaults" not in raw:
         raise ValueError("persona_defaults section missing in config.yaml")
@@ -46,7 +42,7 @@ def load_config() -> GameConfig:
 
     # build config
     config = GameConfig(
-        documents=docs, evidence=evs, procedures=procs, personas=pers, persona_defaults=persona_defaults
+        documents=docs, evidence=evs, personas=pers, persona_defaults=persona_defaults
     )
     return config
 

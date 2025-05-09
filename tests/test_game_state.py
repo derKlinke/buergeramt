@@ -60,32 +60,6 @@ def test_increase_decrease_frustration_boundaries():
     gs.decrease_frustration(1)
     assert gs.frustration_level == 1
 
-def test_transition_procedure_valid_and_invalid():
-    gs = GameState()
-    # Start at Antragstellung, possible: Formularprüfung, Nachweisanforderung
-    assert gs.current_procedure == "Antragstellung"
-    assert set(gs.get_valid_next_procedures()) == {"Formularprüfung", "Nachweisanforderung"}
-    # Valid transition
-    res = gs.transition_procedure("Formularprüfung")
-    assert res is True
-    assert gs.current_procedure == "Formularprüfung"
-    # Try invalid transition (e.g., Abschluss directly, should fail as not in next_steps)
-    fail = gs.transition_procedure("Abschluss")
-    # Should not transition (unless super frustrated)
-    assert fail is False
-    assert gs.current_procedure == "Formularprüfung"
-    # Now, high frustration allows to force transition
-    gs.frustration_level = 10
-    forced = gs.transition_procedure("Abschluss")
-    assert forced is True
-    assert gs.current_procedure == "Abschluss"
-
-def test_procedure_history_tracks_transitions():
-    gs = GameState()
-    gs.transition_procedure("Formularprüfung")
-    gs.transition_procedure("Nachweisanforderung")
-    assert gs.procedure_history[:3] == ["Antragstellung", "Formularprüfung", "Nachweisanforderung"]
-
 def test_update_progress_calculation():
     gs = GameState()
     # Add a document and some evidence, should increment progress

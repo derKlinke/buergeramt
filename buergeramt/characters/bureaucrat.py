@@ -4,14 +4,9 @@ from dotenv import load_dotenv
 from pydantic_ai import Agent
 
 from buergeramt.characters.agent_response import AgentResponse
-from buergeramt.rules.game_state import (
-    GameDeps,
-    add_document,
-    add_evidence,
-    decrease_frustration,
-    increase_frustration,
-    transition_procedure,
-)
+from buergeramt.rules.game_state import (GameDeps, add_document, add_evidence,
+                                         decrease_frustration,
+                                         increase_frustration)
 from buergeramt.utils.game_logger import get_logger
 
 
@@ -39,19 +34,17 @@ class Bureaucrat:
                 required_evidence = ", ".join(persona.required_evidence)
                 tool_instructions = (
                     "\n---\n"
-                    "You have access to the following tools for updating the game state. Whenever the user provides a document, evidence, or requests a procedure change, always use the appropriate tool. Do not just mention the action, always call the tool.\n"
+                    "You have access to the following tools for updating the game state. Whenever the user provides a document or evidence, always use the appropriate tool. Do not just mention the action, always call the tool.\n"
                     "\n"
                     "Tool usage examples:\n"
                     "- If the user says 'Hier ist mein Personalausweis', call add_evidence with evidence_name='valid_id', evidence_form='Personalausweis'.\n"
                     "- If the user says 'Ich reiche die Schenkungsanmeldung ein', call add_document with document_name='Schenkungsanmeldung'.\n"
-                    "- If the user says 'Ich möchte zur nächsten Abteilung', call transition_procedure with next_procedure='<target_procedure>'.\n"
                     "- If the user expresses frustration (e.g., 'Das ist doch lächerlich!'), call increase_frustration.\n"
                     "- If the user calms down, call decrease_frustration.\n"
                     "\n"
                     "Tool reference:\n"
                     "- add_document(document_name: str)\n"
                     "- add_evidence(evidence_name: str, evidence_form: str)\n"
-                    "- transition_procedure(next_procedure: str)\n"
                     "- increase_frustration(amount: int = 1)\n"
                     "- decrease_frustration(amount: int = 1)\n"
                     "---\n"
@@ -83,9 +76,6 @@ class Bureaucrat:
                 Tool(add_document, name="add_document", description="Add a document to the player's collection")
             )
             tools.append(Tool(add_evidence, name="add_evidence", description="Add evidence to the player's collection"))
-            tools.append(
-                Tool(transition_procedure, name="transition_procedure", description="Transition to a new procedure")
-            )
             tools.append(
                 Tool(
                     increase_frustration,

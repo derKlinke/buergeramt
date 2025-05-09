@@ -19,8 +19,6 @@ class GameState(BaseModel):
     collected_documents: Dict[str, Document] = Field(default_factory=dict)
     evidence_provided: Dict[str, str] = Field(default_factory=dict)
     current_department: str = "initial"
-    current_procedure: str = "Antragstellung"
-    procedure_history: List[str] = Field(default_factory=lambda: ["Antragstellung"])
     attempts: int = 0
     frustration_level: int = 0
     progress: int = 0
@@ -78,70 +76,11 @@ class GameState(BaseModel):
         self.frustration_level = max(0, self.frustration_level - amount)
         self._logger.log_state_change("frustration_level", old_level, self.frustration_level)
 
-    def transition_procedure(self, next_procedure: str) -> bool:
-        self._debug_log_tool_call("transition_procedure", next_procedure=next_procedure)
-        if next_procedure not in self.config.procedures:
-            self._logger.log_error(
-                ValueError(f"Procedure '{next_procedure}' not found in config"), "transition_procedure"
-            )
-            return False
-        current_proc = self.config.procedures.get(self.current_procedure)
-        old_procedure = self.current_procedure
-        if current_proc and next_procedure in current_proc.next_steps:
-            self.current_procedure = next_procedure
-            self.procedure_history.append(next_procedure)
-            self._logger.log_procedure_transition(old_procedure, next_procedure)
-            return True
-        if self.frustration_level > 5:
-            self.current_procedure = next_procedure
-            self.procedure_history.append(next_procedure)
-            self._logger.log_procedure_transition(
-                old_procedure, next_procedure, f"Force transition due to high frustration ({self.frustration_level})"
-            )
-            return True
-        self._logger.log_error(
-            ValueError(f"Cannot transition from '{old_procedure}' to '{next_procedure}'"),
-            f"next_steps={current_proc.next_steps if current_proc else '[]'}",
-        )
-        return False
-
-    def get_valid_next_procedures(self) -> List[str]:
-        current_proc = self.config.procedures.get(self.current_procedure)
-        if current_proc:
-            return current_proc.next_steps
-        return []
-
-    def get_procedure_keywords(self) -> List[str]:
-        current_proc = self.config.procedures.get(self.current_procedure)
-        if current_proc:
-            return current_proc.keywords
-        return []
-
-    def get_procedure_description(self) -> Optional[str]:
-        current_proc = self.config.procedures.get(self.current_procedure)
-        if current_proc:
-            return current_proc.description
-        return None
-
     def update_progress(self):
         old_progress = self.progress
-        document_progress = len(self.collected_documents) * 10
-        evidence_progress = len(self.evidence_provided) * 5
-        procedure_weights = {
-            "Antragstellung": 0,
-            "Formularprüfung": 5,
-            "Nachweisanforderung": 10,
-            "Terminvereinbarung": 15,
-            "Weiterleitung": 15,
-            "Warteschleife": 15,
-            "Bescheiderteilung": 20,
-            "Widerspruch": 15,
-            "Zahlungsaufforderung": 25,
-            "Abschluss": 30,
-        }
-        procedure_bonus = procedure_weights.get(self.current_procedure, 0)
-        history_bonus = min(20, len(self.procedure_history) * 2)
-        self.progress = min(100, document_progress + evidence_progress + procedure_bonus + history_bonus)
+        document_progress = len(self.collected_documents) * 20
+        evidence_progress = len(self.evidence_provided) * 10
+        self.progress = min(100, document_progress + evidence_progress)
         if self.progress != old_progress:
             self._logger.log_state_change("progress", old_progress, self.progress)
         return self.progress
@@ -180,14 +119,8 @@ class GameState(BaseModel):
 
     def get_formatted_gamestate(self) -> str:
         import json
-
         state_info = {
             "current_department": self.current_department,
-            "current_procedure": self.current_procedure,
-            "valid_next_procedures": self.get_valid_next_procedures(),
-            "procedure_history": self.procedure_history,
-            "procedure_keywords": self.get_procedure_keywords(),
-            "procedure_description": self.get_procedure_description(),
             "collected_documents": self.get_collected_documents(),
             "evidence_provided": self.get_evidence_provided(),
             "attempts": self.attempts,
@@ -216,10 +149,6 @@ def add_document(ctx: RunContext[GameDeps], document_name: str):
 
 def add_evidence(ctx: RunContext[GameDeps], evidence_name: str, evidence_form: str):
     return ctx.deps.game_state.add_evidence(evidence_name, evidence_form)
-
-
-def transition_procedure(ctx: RunContext[GameDeps], next_procedure: str):
-    return ctx.deps.game_state.transition_procedure(next_procedure)
 
 
 def increase_frustration(ctx: RunContext[GameDeps], amount: int = 1):

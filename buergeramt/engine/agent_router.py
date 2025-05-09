@@ -11,18 +11,8 @@ class AgentRouter:
             agent = build_bureaucrat(persona_id)
             self.bureaucrats[persona.department] = agent
         self.game_state = game_state
-        # determine starting department: map procedure department codes to persona departments
-        proc_dept_code = game_state.current_department or config.procedures[game_state.current_procedure].department
-        # alias mapping from procedure-level codes to persona departments
-        DEPT_ALIAS = {
-            "initial": "Erstbearbeitung",
-            "final": "Abschlussstelle",
-            "appeals": "Erstbearbeitung",
-        }
-        dept_key = DEPT_ALIAS.get(proc_dept_code, proc_dept_code)
-        # fall back to any matching persona department
-        self.active_bureaucrat = self.bureaucrats.get(dept_key) or next(iter(self.bureaucrats.values()))
-        # set game state to the persona department
+        # always start with Herr Schmidt (Erstbearbeitung) as the active bureaucrat
+        self.active_bureaucrat = self.bureaucrats.get("Erstbearbeitung") or next(iter(self.bureaucrats.values()))
         self.game_state.current_department = self.active_bureaucrat.department
 
     def switch_agent(self, agent_name: str, print_styled=None) -> bool:

@@ -114,41 +114,29 @@ class GameEngine:
 
     def check_win_condition(self) -> bool:
         """Check if the player has won the game"""
-        # To win, player needs:
-        # 1. The final Zahlungsaufforderung document
-        # 2. To be in the final department
-        # 3. To have completed the Bescheiderteilung procedure
-
+        # Player wins if they have acquired ALL configured documents (or at least Zahlungsaufforderung), regardless of procedure
         has_final_doc = "Zahlungsaufforderung" in self.game_state.collected_documents
-        is_final_dept = self.game_state.current_department == "Abschlussstelle"
-        # final procedure is Abschluss after payment request
-        is_final_proc = self.game_state.current_procedure == "Abschluss"
-
-        # Also allow winning if player has collected all documents and has high frustration
-        all_docs = all(doc in self.game_state.collected_documents for doc in self.game_state.config.documents)
+        all_docs_collected = all(doc in self.game_state.collected_documents for doc in self.game_state.config.documents)
         is_frustrated = self.game_state.frustration_level > 8
 
-        primary_condition_met = has_final_doc and is_final_dept and is_final_proc
-        frustration_condition_met = all_docs and is_frustrated
+        regular_win = has_final_doc
+        frustration_win = all_docs_collected and is_frustrated
 
-        # Log the win condition check
-        if primary_condition_met:
-            self.logger.log_win_condition(True, "Regular win condition met - all requirements fulfilled")
-        elif frustration_condition_met:
-            self.logger.log_win_condition(
-                True, f"Frustration win condition met - Level: {self.game_state.frustration_level}"
-            )
+        # Log
+        if regular_win:
+            self.logger.log_win_condition(True, "All main documents acquired: Win!")
+        elif frustration_win:
+            self.logger.log_win_condition(True, f"Frustration win: All docs & high frustration ({self.game_state.frustration_level})")
         else:
             missing = []
             if not has_final_doc:
-                missing.append("Missing final document")
-            if not is_final_dept:
-                missing.append(f"Not in final department (current: {self.game_state.current_department})")
-            if not is_final_proc:
-                missing.append(f"Not in final procedure (current: {self.game_state.current_procedure})")
+                missing.append("Missing final document 'Zahlungsaufforderung'")
+            not_collected = [doc for doc in self.game_state.config.documents if doc not in self.game_state.collected_documents]
+            if not_collected:
+                missing.append("Still missing: " + ", ".join(not_collected))
             self.logger.log_win_condition(False, f"Not met: {', '.join(missing)}")
 
-        return primary_condition_met or frustration_condition_met
+        return regular_win or frustration_win
 
     def _print_styled(self, text: str, style: str):
         """Print text with styling based on the style parameter"""

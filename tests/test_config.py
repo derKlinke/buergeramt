@@ -7,11 +7,9 @@ def test_get_config_structure():
     config = get_config()
     assert hasattr(config, "documents")
     assert hasattr(config, "evidence")
-    assert hasattr(config, "procedures")
     assert hasattr(config, "personas")
     assert isinstance(config.documents, dict)
     assert isinstance(config.evidence, dict)
-    assert isinstance(config.procedures, dict)
     assert isinstance(config.personas, dict)
     assert len(config.personas) > 0
 

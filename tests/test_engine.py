@@ -19,9 +19,6 @@ def test_engine_minimal_progression_flow(monkeypatch):
     gs.add_evidence("valid_id", "Personalausweis")
     gs.add_evidence("gift_details", "Notarielle Urkunde")
     gs.add_document("Schenkungsanmeldung")
-    # Procedure advance
-    engine.game_state.transition_procedure("Formularprüfung")
-    engine.game_state.transition_procedure("Nachweisanforderung")
     # Collect further evidence for Wertermittlung
     gs.add_evidence("market_comparison", "Marktwertanalyse")
     gs.add_evidence("expert_opinion", "Sachverständigengutachten")

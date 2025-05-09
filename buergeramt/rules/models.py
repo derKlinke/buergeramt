@@ -19,15 +19,6 @@ class Evidence(BaseModel):
     acceptable_forms: List[str]
 
 
-# model for a procedure definition
-class Procedure(BaseModel):
-    id: str
-    description: str
-    keywords: List[str]
-    next_steps: List[str]
-    department: str
-
-
 class PersonaConfig(BaseModel):
     """Raw persona config from YAML file - minimal required fields"""
 
