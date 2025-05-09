@@ -12,7 +12,14 @@ class Bureaucrat:
         self.department = department
         self.system_prompt = system_prompt
         self.context_manager = ContextManager()
-        self.agent = Agent(api_key=api_key)
+        from buergeramt.characters.agent_response import AgentResponse
+
+        # initialize agent with base system prompt (persona template)
+        self.agent = Agent(
+            api_key=api_key,
+            system_prompt=self.system_prompt,
+            output_type=AgentResponse,
+        )
         self.message_builder = MessageBuilder(self.system_prompt, self.context_manager)
         self.logger = get_logger()
         self.logger.logger.info(f"Initialized bureaucrat: {name}, {title} ({department})")
@@ -59,6 +66,7 @@ class Bureaucrat:
         if not self.agent.has_api_key():
             raise RuntimeError("AI agent is not available: missing API key.")
 
+        # detailed instructions for JSON-structured response
         system_instruction = (
             "You are a bureaucratic AI agent in a German administrative adventure game. "
             "Analyze the user's input in the context of the current game state. "
@@ -113,26 +121,24 @@ class Bureaucrat:
             "If a field is not relevant, set it to null or an empty list."
         )
         game_state_info = game_state.get_formatted_gamestate()
-        user_msg = {"role": "user", "content": f"Eingabe: '{query}'\nAktueller Spielstand: {game_state_info}"}
         try:
-            messages = [{"role": "system", "content": system_instruction}, user_msg]
-            
-            # Log the AI prompt
-            self.logger.log_ai_prompt(messages)
-            
-            # Make the API call
-            completion = self.agent.chat_structured(
-                messages=messages, response_format=AgentResponse, max_tokens=200, temperature=0
+            # run agent synchronously with structured output
+            result = self.agent.run(
+                query,
+                system_prompt=system_instruction,
+                max_tokens=200,
+                temperature=0,
             )
-            
-            # Log the raw AI response
-            self.logger.log_ai_response(completion)
-            
-            agent_response = completion.choices[0].message.parsed
-            
-            # Log the structured agent action
+            # log prompt and raw response if available
+            if hasattr(result, "messages"):
+                self.logger.log_ai_prompt(result.messages)
+            if hasattr(result, "response"):
+                self.logger.log_ai_response(result.response)
+            # extract parsed output
+            agent_response = result.output
+            # log structured actions
             self.logger.log_agent_action(agent_response.actions.dict())
-            
+            # update context and return
             self.context_manager.add_exchange(query, agent_response.response_text)
             return agent_response
         except Exception as e:
@@ -186,18 +192,20 @@ class Bureaucrat:
         Keep it brief (1-2 sentences) and in character.
         """
         try:
-            # Log the hint prompt
-            self.logger.log_ai_prompt([{"role": "user", "content": prompt}])
-            
-            # Get hint from AI
-            response = self.agent.chat([{"role": "user", "content": prompt}], max_tokens=100, temperature=0.7)
-            
-            # Log the hint response
-            self.logger.log_ai_response(response)
-            
-            hint = response.choices[0].message.content.strip()
+            # run agent synchronously for free-form hint
+            result = self.agent.run(
+                prompt,
+                output_type=None,
+                max_tokens=100,
+                temperature=0.7,
+            )
+            # log prompt and raw response
+            self.logger.log_ai_prompt(result.messages)
+            self.logger.log_ai_response(result.response)
+            # extract hint text
+            hint = result.output
             self.logger.logger.info(f"HINT from {self.name}: {hint}")
-            
+
             return hint
         except Exception as e:
             error_msg = f"API Error in give_hint: {e}"

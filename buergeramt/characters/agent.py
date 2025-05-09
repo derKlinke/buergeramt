@@ -1,41 +1,40 @@
 import os
 
-from openai import OpenAI
-
 
 class Agent:
-    def __init__(self, api_key=None):
-        self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
-        self.client = OpenAI(api_key=self.api_key)
-        self.model = "gpt-4o-mini"
-
+    """
+    wrapper around pydantic-ai Agent for both free-form and structured output
+    """
+    def __init__(self, api_key=None, *, model: str = "gpt-4o-mini", deps_type=None, output_type=None, system_prompt=None):
+        # defer import of pydantic-ai until agent instantiation
         try:
-            self.client.chat.completions.create(
-                model="gpt-4o-mini", messages=[{"role": "user", "content": "test"}], max_tokens=1
+            from pydantic_ai import Agent as PydanticAgent
+        except ImportError:
+            raise RuntimeError(
+                "pydantic-ai is required but not installed."
+                " Please install pydantic-ai>=0.1.10"
             )
-        except Exception as e:
-            raise RuntimeError("gpt-4o-mini model is required but not available: " + str(e))
-
-    def get_model(self):
-        return self.model
-
-    def has_api_key(self):
-        return bool(self.api_key)
-
-    def chat(self, messages, max_tokens=200, temperature=0.7):
-        return self.client.chat.completions.create(
-            model=self.model, messages=messages, max_tokens=max_tokens, temperature=temperature
+        self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
+        self.agent = PydanticAgent(
+            model,
+            api_key=self.api_key,
+            deps_type=deps_type,
+            output_type=output_type,
+            system_prompt=system_prompt,
         )
 
-    def chat_structured(self, messages, response_format, max_tokens=200, temperature=0.7):
-        """
-        Call the OpenAI completions API with response_format (pydantic model) for structured output.
-        Returns the parsed response (pydantic model instance) or raises.
-        """
-        return self.client.beta.chat.completions.parse(
-            model=self.model,
-            messages=messages,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            response_format=response_format,
+    def get_model(self) -> str:
+        return getattr(self.agent, "model", None) or getattr(self.agent, "model_name", None)
+
+    def has_api_key(self) -> bool:
+        return bool(self.api_key)
+
+    def run(self, user_input: str, *, deps=None, output_type=None, system_prompt=None, **kwargs):
+        """run a sync agent call with optional schema and deps"""
+        return self.agent.run_sync(
+            user_input,
+            deps=deps,
+            output_type=output_type,
+            system_prompt=system_prompt,
+            **kwargs,
         )

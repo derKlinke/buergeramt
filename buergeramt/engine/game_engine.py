@@ -13,23 +13,26 @@ class GameEngine:
         self.logger = get_logger()
         self.logger.logger.info("=== Starting new game session ===")
         
-        # Initialize game state
+        # initialize game state
         self.game_state = GameState()
-        self.use_ai_characters = True
-        
-        try:
-            self.agent_router = AgentRouter(self.game_state)
-            message = "Bürokratensimulation mit KI-Charakteren gestartet. Viel Erfolg!"
-            print(message)
-            self.logger.logger.info(message)
-        except Exception as e:
-            error_msg = f"Fehler beim Initialisieren der KI-Charaktere: {e}"
-            print(error_msg)
-            print("Das Spiel kann nicht gestartet werden.")
-            self.logger.log_error(e, "Game initialization")
-            self.game_over = True
-            return
-            
+        # decide whether to enable AI characters
+        self.use_ai_characters = use_ai_characters
+        if self.use_ai_characters:
+            try:
+                self.agent_router = AgentRouter(self.game_state)
+                message = "Bürokratensimulation mit KI-Charakteren gestartet. Viel Erfolg!"
+                print(message)
+                self.logger.logger.info(message)
+            except Exception as e:
+                error_msg = f"Fehler beim Initialisieren der KI-Charaktere: {e}"
+                print(error_msg)
+                print("Das Spiel kann nicht gestartet werden.")
+                self.logger.log_error(e, "Game initialization")
+                self.game_over = True
+                return
+        else:
+            self.agent_router = None
+        # game control flags
         self.game_over = False
         self.win_condition = False
         self.logger.logger.info("Game engine initialized successfully")
@@ -285,7 +288,7 @@ class GameEngine:
                     # Let's add some whimsical bureaucratic randomness - sometimes random evidence
                     # actually works in strange bureaucracies!
                     import random
-                    
+
                     # Generate a random chance based on frustration level (higher frustration = more chaos)
                     bizarre_chance = min(40, 10 + (self.game_state.frustration_level * 5))
                     
