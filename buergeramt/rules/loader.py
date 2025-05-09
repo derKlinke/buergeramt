@@ -3,7 +3,9 @@ from typing import Dict
 
 import yaml
 
-from .models import Document, Evidence, GameConfig, Persona, PersonaConfig, PersonaDefaults, Procedure
+from buergeramt.rules.game_config import GameConfig
+from buergeramt.rules.models import Document, Evidence, PersonaConfig, PersonaDefaults, Procedure
+from buergeramt.rules.persona import Persona
 
 CONFIG_PATH = Path(__file__).parent / "config.yaml"
 
@@ -27,11 +29,10 @@ def load_config() -> GameConfig:
     for pid, data in raw.get("procedures", {}).items():
         procs[pid] = Procedure(id=pid, **data)
 
-    # Initialize defaults
-    persona_defaults = PersonaDefaults()
-    if "persona_defaults" in raw:
-        # Update defaults with values from config if provided
-        persona_defaults = PersonaDefaults(**raw["persona_defaults"])
+    # Require persona_defaults in YAML
+    if "persona_defaults" not in raw:
+        raise ValueError("persona_defaults section missing in config.yaml")
+    persona_defaults = PersonaDefaults(**raw["persona_defaults"])
 
     # parse personas
     pers: Dict[str, Persona] = {}
@@ -51,12 +52,16 @@ def load_config() -> GameConfig:
 
 
 def create_persona_from_config(persona_id: str, config: PersonaConfig, defaults: PersonaDefaults) -> Persona:
-    """Create a complete Persona object from a minimal config, filling in defaults."""
-    # Apply defaults for optional fields if not provided
-    behavioral_rules = config.behavioral_rules or defaults.behavioral_rules
-    system_prompt_template = config.system_prompt_template or defaults.system_prompt_template
+    """Create a complete Persona object from a minimal config, merging defaults and persona-specific rules."""
+    # Merge behavioral_rules: defaults first, then persona-specific (if any)
+    if config.behavioral_rules:
+        behavioral_rules = defaults.behavioral_rules + [
+            rule for rule in config.behavioral_rules if rule not in defaults.behavioral_rules
+        ]
+    else:
+        behavioral_rules = defaults.behavioral_rules
+    system_prompt_template = defaults.system_prompt_template
 
-    # Build the complete persona
     return Persona(
         id=persona_id,
         name=config.name,
@@ -78,4 +83,5 @@ def get_config() -> GameConfig:
     global _cfg
     if _cfg is None:
         _cfg = load_config()
+    return _cfg
     return _cfg

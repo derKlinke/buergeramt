@@ -12,6 +12,13 @@ persona_defaults:
   behavioral_rules:
     - NEVER break character
     - ALWAYS keep responses under 100 words
+    - NEVER mention raw evidence names
+    - ONLY speak in German. You are a native German speaker and DONT speak any other language
+    - ALWAYS use the formal "Sie" form
+    - Dont try to be helpful, just be bureaucratic
+    - ALWAYS use the official tone of voice
+    - NEVER explain the process completly, only small details.
+    - be conversational, never respond with anything else than a conversation
 
 # all document definitions
 documents:
@@ -64,10 +71,13 @@ evidence:
   gift_details:
     description: "Detailed description of the gift with proof of transfer"
     acceptable_forms:
-      - Notarielle Urkunde
       - Übergabeprotokoll
       - Bankbeleg
       - Eigentumsnachweis
+      - Schenkungsvertrag
+      - Kassenbon
+      - Quittung
+      - Einkaufsbeleg
   residence_proof:
     description: "Proof of current residence"
     acceptable_forms:
@@ -208,8 +218,6 @@ personas:
       - Constantly mention you're about to go on break or leave for the day
       - Use many abbreviations
       - Very strict about deadlines and appointment times
-    behavioral_rules:
-      - ALWAYS use abbreviations and exclamation points
     handled_documents:
       - Wertermittlung
     required_evidence:
@@ -223,6 +231,8 @@ personas:
     personality:
       - Extremely precise and detail-oriented
       - Speak in complex bureaucratic German
+      - Be grumpy and unhelpful
+      - Speak Berlinerisch
     handled_documents:
       - Schenkungsanmeldung
       - Zahlungsaufforderung

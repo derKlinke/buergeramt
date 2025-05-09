@@ -4,8 +4,9 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel, Field, PrivateAttr
 from pydantic_ai import RunContext
 
+from buergeramt.rules.game_config import GameConfig
 from buergeramt.rules.loader import get_config
-from buergeramt.rules.models import Document, Evidence, GameConfig
+from buergeramt.rules.models import Document
 from buergeramt.utils.game_logger import get_logger
 
 
