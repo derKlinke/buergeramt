@@ -1,5 +1,10 @@
 # unified game configuration
 
+# global game configuration
+game:
+  starting_agent: HerrSchmidt  # persona_id or department name
+  final_document: Zahlungsaufforderung  # id of the end goal document
+
 # Global defaults for personas
 persona_defaults:
   system_prompt_template: |

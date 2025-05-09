@@ -53,11 +53,27 @@ def build_bureaucrat(persona_id: str) -> Bureaucrat:
     if others_section:
         others_section = f"\n## DOKUMENTE DER ANDEREN ABTEILUNGEN\n{others_section}\n"
 
+    # Add info about document dependencies and end goal
+    doc_dependencies = []
+    end_goal_doc = config.final_document
+    for doc_id, doc in config.documents.items():
+        if doc_id not in p.handled_documents:
+            continue
+        if doc.requirements:
+            reqs = ", ".join(doc.requirements)
+            doc_dependencies.append(f"- {doc_id} depends on: {reqs}")
+    dependency_section = ""
+    if doc_dependencies:
+        dependency_section = "\n## DOKUMENT-ABHÄNGIGKEITEN\n" + "\n".join(doc_dependencies) + "\n"
+    if end_goal_doc:
+        dependency_section += f"\n## ENDZIEL\nDas Endziel ist das Dokument: {end_goal_doc}\n"
+
     # Add to system prompt
     persona_context = (
         f"\n## DOKUMENTE DIE SIE BEARBEITEN\n{docs_section}\n"
         f"\n## NACHWEISE DIE SIE PRÜFEN\n{evidence_section}\n"
         f"{others_section if others_section else ''}"
+        f"{dependency_section}"
     )
 
     # Add behavioral rules section
@@ -81,7 +97,14 @@ def build_bureaucrat(persona_id: str) -> Bureaucrat:
         "- decrease_frustration(amount: int = 1)\n"
         "- switch_department(department: str)\n"
         "---\n"
+        "\n"
+        "You are responsible for the documents listed above.\n"
+        "If the user needs a document that you do not handle, refer them to the agent or department responsible for that document.\n"
+        "Do not switch departments yourself or call switch_department unless the user explicitly requests to move.\n"
+        "Always explain which agent or department is responsible for the next required document based on the dependencies.\n"
+        "Never lay out the full workflow or process, only respond to the current request and refer as needed.\n"
     )
+    # Build full system prompt
     system_prompt = (
         p.system_prompt_template.format(
             name=p.name,

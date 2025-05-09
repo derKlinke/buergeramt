@@ -11,8 +11,12 @@ class AgentRouter:
             agent = build_bureaucrat(persona_id)
             self.bureaucrats[persona.department] = agent
         self.game_state = game_state
-        # always start with Herr Schmidt (Erstbearbeitung) as the active bureaucrat
-        self.active_bureaucrat = self.bureaucrats.get("Erstbearbeitung") or next(iter(self.bureaucrats.values()))
+        # always start with the configured starting agent if available
+        starting_agent = getattr(config, 'starting_agent', None)
+        if starting_agent and starting_agent in self.bureaucrats:
+            self.active_bureaucrat = self.bureaucrats[starting_agent]
+        else:
+            self.active_bureaucrat = self.bureaucrats.get("Erstbearbeitung") or next(iter(self.bureaucrats.values()))
         self.game_state.current_department = self.active_bureaucrat.department
 
     def switch_agent(self, agent_name: str, print_styled=None) -> bool:

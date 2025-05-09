@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 
 from pydantic import BaseModel, Field
 
@@ -11,3 +11,5 @@ class GameConfig(BaseModel):
     evidence: Dict[str, Evidence]
     personas: Dict[str, Persona]
     persona_defaults: PersonaDefaults = Field(default_factory=PersonaDefaults)
+    final_document: Optional[str] = None  # id of the end goal document
+    starting_agent: Optional[str] = None  # persona_id or department name

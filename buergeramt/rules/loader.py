@@ -40,9 +40,18 @@ def load_config() -> GameConfig:
         persona = create_persona_from_config(persona_id, persona_config, persona_defaults)
         pers[persona_id] = persona
 
+    # read global game config
+    game_section = raw.get("game", {})
+    starting_agent = game_section.get("starting_agent")
+    final_document = game_section.get("final_document")
     # build config
     config = GameConfig(
-        documents=docs, evidence=evs, personas=pers, persona_defaults=persona_defaults
+        documents=docs,
+        evidence=evs,
+        personas=pers,
+        persona_defaults=persona_defaults,
+        final_document=final_document,
+        starting_agent=starting_agent,
     )
     return config
 
@@ -79,5 +88,4 @@ def get_config() -> GameConfig:
     global _cfg
     if _cfg is None:
         _cfg = load_config()
-    return _cfg
     return _cfg
