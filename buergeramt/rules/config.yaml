@@ -111,6 +111,15 @@ evidence:
     acceptable_forms:
       - Steuerbescheid
       - Steuer-ID Mitteilung
+  relationship_proof:
+    description: "Proof of relationship to the donor"
+    acceptable_forms:
+      - Geburtsurkunde
+      - Heiratsurkunde
+      - Verlobungsurkunde
+      - Notarielle Urkunde
+      - Eidesstattliche Erklärung
+      - Freundebuch
 
 
 # persona definitions - simplified with only the unique attributes

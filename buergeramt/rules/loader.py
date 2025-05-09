@@ -53,6 +53,16 @@ def load_config() -> GameConfig:
         final_document=final_document,
         starting_agent=starting_agent,
     )
+
+    # check that all document requirements that refer to documents are defined
+    all_doc_ids = set(docs.keys())
+    all_evidence_ids = set(evs.keys())
+    for doc in docs.values():
+        for req in doc.requirements:
+            # if requirement is not evidence, it must be a document
+            if req not in all_evidence_ids and req not in all_doc_ids:
+                raise ValueError(f"Document '{doc.id}' requires '{req}', which is not defined as a document or evidence.")
+
     return config
 
 
