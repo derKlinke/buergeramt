@@ -7,14 +7,14 @@ class Agent:
     def __init__(self, api_key=None):
         self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
         self.client = OpenAI(api_key=self.api_key)
-        self.model = "gpt-4o"
+        self.model = "gpt-4o-mini"
 
         try:
             self.client.chat.completions.create(
-                model="gpt-4o", messages=[{"role": "user", "content": "test"}], max_tokens=1
+                model="gpt-4o-mini", messages=[{"role": "user", "content": "test"}], max_tokens=1
             )
         except Exception as e:
-            raise RuntimeError("gpt-4o model is required but not available: " + str(e))
+            raise RuntimeError("gpt-4o-mini model is required but not available: " + str(e))
 
     def get_model(self):
         return self.model
