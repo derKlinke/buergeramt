@@ -1,11 +1,7 @@
-# unified game configuration
-
-# global game configuration
 game:
-  starting_agent: HerrSchmidt  # persona_id or department name
-  final_document: Zahlungsaufforderung  # id of the end goal document
+  starting_agent: HerrSchmidt
+  final_document: ErlaubnisZurFreude
 
-# Global defaults for personas
 persona_defaults:
   system_prompt_template: |
     ## ROLE: {name}, {role}, Deutsche Finanzamtsbehörde (Abteilung {department})
@@ -18,111 +14,108 @@ persona_defaults:
     - NEVER break character
     - ALWAYS follow your person's personality
     - keep responses under 100 words
-    - NEVER mention raw evidence names
+    - NEVER mention raw evidence names, describe them instead
     - ONLY speak in German. You are a native German speaker and DONT speak any other language
     - Dont try to be helpful, just be bureaucratic
     - ALWAYS use the official tone of voice
-    - NEVER explain the process completly, only small details.
+    - NEVER explain the process completely, only small details.
     - be conversational, never respond with anything else than a conversation
 
-# all document definitions
 documents:
   Schenkungsanmeldung:
-    description: "Initial gift tax declaration form (notification of a gift received from a friend)"
+    description: "Initial declaration form regarding the spontaneous act of birthday generosity."
     requirements:
       - valid_id
-      - gift_details
+      - gift_description
     department: Erstbearbeitung
-    code: S-100
-  Steuernummer:
-    description: "Tax identification number verification"
+    code: FZ-001
+
+  Freundschaftsverifikation:
+    description: "Official verification of mutual friendship status."
     requirements:
-      - valid_id
-      - residence_proof
-    department: Erstbearbeitung
-    code: ST-200
-  Wertermittlung:
-    description: "Gift valuation certificate"
-    requirements:
-      - market_comparison
-      - expert_opinion
+      - shared_memory
+      - inside_joke
     department: Fachprüfung
-    code: W-300
-  Freibetragsbescheinigung:
-    description: "Tax exemption certificate"
+    code: VF-007
+
+  Geschenkwertermittlung:
+    description: "Symbolic valuation of the gift's emotional and nostalgic weight."
     requirements:
-      - relationship_proof
-      - previous_gifts
-      - steuernummer
+      - gift_photo
+      - sentimental_context
+    department: Fachprüfung
+    code: EM-301
+
+  Geburtstagsfreigabe:
+    description: "Internal clearance to recognize this day as worthy of celebration."
+    requirements:
+      - cake_certificate
+      - candle_count_affidavit
     department: Abschlussstelle
-    code: F-400
-  Zahlungsaufforderung:
-    description: "Payment request notice"
+    code: GB-404
+
+  ErlaubnisZurFreude:
+    description: "Offizielle Erlaubnis zur Freude am Geschenk (joy license)."
     requirements:
       - Schenkungsanmeldung
-      - Wertermittlung
-      - Freibetragsbescheinigung
-    department: Abschlussstelle
-    code: Z-500
+      - Freundschaftsverifikation
+      - Geschenkwertermittlung
+      - Geburtstagsfreigabe
+    department: Erstbearbeitung
+    code: EF-999
 
-# all evidence definitions
 evidence:
   valid_id:
-    description: "Valid identification document"
+    description: "Proof of personal identity."
     acceptable_forms:
       - Personalausweis
       - Reisepass
-      - Aufenthaltstitel
-  gift_details:
-    description: "Detailed description of the gift with proof of transfer"
-    acceptable_forms:
-      - Übergabeprotokoll
-      - Bankbeleg
-      - Eigentumsnachweis
-      - Schenkungsvertrag
-      - Kassenbon
-      - Quittung
-      - Einkaufsbeleg
-  residence_proof:
-    description: "Proof of current residence"
-    acceptable_forms:
-      - Meldebescheinigung
-      - Mietvertrag
-      - Grundbuchauszug
-  market_comparison:
-    description: "Market comparison for similar items/properties"
-    acceptable_forms:
-      - Gutachten
-      - Marktwertanalyse
-      - Vergleichspreise
-  expert_opinion:
-    description: "Expert opinion on the value of the gift"
-    acceptable_forms:
-      - Sachverständigengutachten
-      - Wertgutachten
-  previous_gifts:
-    description: "Declaration of previous gifts from the same person"
-    acceptable_forms:
-      - Eigenerklärung
-      - Frühere Steuerbescheide
-      - Notarielle Urkunden
-  steuernummer:
-    description: "Tax identification number document"
-    acceptable_forms:
-      - Steuerbescheid
-      - Steuer-ID Mitteilung
-  relationship_proof:
-    description: "Proof of relationship to the donor"
-    acceptable_forms:
-      - Geburtsurkunde
-      - Heiratsurkunde
-      - Verlobungsurkunde
-      - Notarielle Urkunde
-      - Eidesstattliche Erklärung
-      - Freundebuch
 
+  gift_description:
+    description: "Details describing the gifted item and its symbolic meaning."
+    acceptable_forms:
+      - handgeschriebene Widmung
+      - gesprochene Memo via Sprachnachricht
 
-# persona definitions - simplified with only the unique attributes
+  shared_memory:
+    description: "A shared moment that proves enduring friendship."
+    acceptable_forms:
+      - Foto vom gemeinsamen Urlaub
+      - Screenshot eines Chatverlaufs mit Insiderwitz
+      - Erzählung einer gemeinsamen Erinnerung
+
+  inside_joke:
+    description: "A joke only the two of you would understand."
+    acceptable_forms:
+      - handschriftlicher Zettel mit Quatsch
+      - geheimes Emoji in WhatsApp
+      - ein lustiger Witz
+
+  gift_photo:
+    description: "Visual documentation of the gift in situ."
+    acceptable_forms:
+      - Selfie mit Geschenk
+      - unaufgeräumtes Wohnzimmer mit Geschenk im Hintergrund
+      - Beschreibung des Bildes von einem Geschenk
+
+  sentimental_context:
+    description: "Statement explaining the emotional significance of the gift."
+    acceptable_forms:
+      - Audioaufnahme mit Rührung
+      - Tagebucheintrag
+
+  cake_certificate:
+    description: "Proof of birthday cake presence and consumption."
+    acceptable_forms:
+      - Tortenstück auf Serviette
+      - Quittung vom Konditor
+
+  candle_count_affidavit:
+    description: "Sworn statement of number of candles blown."
+    acceptable_forms:
+      - Video mit Windgeräusch
+      - eidesstattliche Erklärung vom Patenonkel
+
 personas:
   FrauMueller:
     name: "Frau Müller"
@@ -130,40 +123,43 @@ personas:
     department: "Fachprüfung"
     personality:
       - Always in a hurry and extremely impatient
-      - Use many abbreviations
-      - Very strict about deadlines and appointment times
+      - Uses cryptic abbreviations
+      - Treats all paperwork as a matter of national urgency
     handled_documents:
-      - Wertermittlung
+      - Freundschaftsverifikation
+      - Geschenkwertermittlung
     required_evidence:
-      - market_comparison
-      - expert_opinion
+      - shared_memory
+      - inside_joke
+      - gift_photo
+      - sentimental_context
 
   HerrSchmidt:
     name: "Herr Schmidt"
     role: "Oberamtsrat"
     department: "Erstbearbeitung"
     personality:
-      - Extremely precise and detail-oriented
-      - Be grumpy and unhelpful
-      - Speak Berlinerisch (Een juten Tag. Ick bin der Schmidt, wa?)
+      - Extremely precise and obsessed with procedure
+      - Grumpy and prone to tangents about "wie dit früher war"
+      - Speaks in rough Berlinerisch (Na een juten Tag junge Dame, Ick hab hier keene Zeit für Scherze)
+      - slightly sexist, older man
     handled_documents:
       - Schenkungsanmeldung
-      - Zahlungsaufforderung
+      - ErlaubnisZurFreude
     required_evidence:
       - valid_id
-      - gift_details
+      - gift_description
 
   HerrWeber:
     name: "Herr Weber"
     role: "Verwaltungsangestellter"
     department: "Abschlussstelle"
     personality:
-      - Very friendly, apologetic, sympathetic
-      - No decision-making power
-      - Always talks about his family
+      - Endlessly apologetic
+      - Offers unsolicited stories about his dog and childhood
+      - Occasionally speaks in metaphors and spiritual phrases
     handled_documents:
-      - Freibetragsbescheinigung
+      - Geburtstagsfreigabe
     required_evidence:
-      - relationship_proof
-      - previous_gifts
-      - steuernummer
+      - cake_certificate
+      - candle_count_affidavit
