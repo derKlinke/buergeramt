@@ -12,33 +12,47 @@ def test_game_engine_init_without_ai_characters():
 
 
 def test_engine_minimal_progression_flow(monkeypatch):
-    """Simulates a minimal successful engine game flow (without AI agent calls)."""
+    from buergeramt.engine.game_engine import GameEngine
     engine = GameEngine(use_ai_characters=False)
     gs = engine.game_state
-    # Simulate collecting evidence for Schenkungsanmeldung
-    gs.add_evidence("valid_id", "Personalausweis")
-    gs.add_evidence("gift_details", "Notarielle Urkunde")
-    gs.add_document("Schenkungsanmeldung")
-    # Collect further evidence for Wertermittlung
-    gs.add_evidence("market_comparison", "Marktwertanalyse")
-    gs.add_evidence("expert_opinion", "Sachverständigengutachten")
-    gs.add_document("Wertermittlung")
-    # Go to exemption doc, simulate flow for closing out
-    gs.add_evidence("relationship_proof", "Freundschaftserklärung") if "relationship_proof" in gs.config.evidence else None
-    gs.add_evidence("previous_gifts", "Eigenerklärung") if "previous_gifts" in gs.config.evidence else None
-    gs.add_evidence("steuernummer", "Steuerbescheid") if "steuernummer" in gs.config.evidence else None
-    gs.add_document("Freibetragsbescheinigung")
-    gs.add_document("Zahlungsaufforderung")
-    # Move to last department and procedure for "victory"
-    gs.current_department = "Abschlussstelle"
-    gs.current_procedure = "Abschluss"
-    # Test win condition (should match true game logic)
-    assert "Zahlungsaufforderung" in gs.collected_documents
-    assert gs.current_department == "Abschlussstelle"
-    # Should be winnable by game_engine.check_win_condition()
-    try:
-        if hasattr(engine, "check_win_condition"):
-            res = engine.check_win_condition()
-            assert res is True
-    except Exception:
-        pass
+    config = gs.config
+    doc_graph = {doc_id: set(doc.requirements) for doc_id, doc in config.documents.items()}
+    visited = set()
+    order = []
+
+    def visit(doc_id):
+        if doc_id in visited:
+            return
+        for req in doc_graph[doc_id]:
+            if req in config.documents:
+                visit(req)
+        order.append(doc_id)
+        visited.add(doc_id)
+
+    for doc_id in config.documents:
+        visit(doc_id)
+    # add all except final doc
+    for doc_id in order:
+        if doc_id == config.final_document:
+            continue
+        doc = config.documents[doc_id]
+        for req in doc.requirements:
+            if req in config.evidence:
+                form = config.evidence[req].acceptable_forms[0]
+                gs.add_evidence(req, form)
+        gs.current_department = doc.department
+        gs.add_document(doc_id)
+    # now add final doc
+    final_doc = config.final_document
+    doc = config.documents[final_doc]
+    for req in doc.requirements:
+        if req in config.evidence:
+            form = config.evidence[req].acceptable_forms[0]
+            gs.add_evidence(req, form)
+    gs.current_department = doc.department
+    gs.add_document(final_doc)
+    gs.current_department = doc.department
+    gs.frustration_level = 12
+    for doc_id in config.documents:
+        assert doc_id in gs.collected_documents
+    assert gs.progress <= 100
