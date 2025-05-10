@@ -38,10 +38,15 @@ class GameState(BaseModel):
             self._logger.log_error(ValueError(f"Document '{document_name}' not found in config"), "add_document")
             return f"Dokument '{document_name}' ist nicht bekannt."
         doc = docs[document_name]
-        missing_reqs = [req for req in doc.requirements if req not in self.evidence_provided]
+        # determine missing requirements: evidence and prerequisite documents
+        missing_evidence = [req for req in doc.requirements
+                            if req in self.config.evidence and req not in self.evidence_provided]
+        missing_documents = [req for req in doc.requirements
+                             if req in self.config.documents and req not in self.collected_documents]
+        missing_reqs = missing_evidence + missing_documents
         if missing_reqs:
             missing_str = ", ".join(missing_reqs)
-            return f"Sie müssen zuerst folgende Nachweise vorlegen: {missing_str}."
+            return f"Sie müssen zuerst folgende Nachweise/Dokumente vorlegen: {missing_str}."
         self.collected_documents[document_name] = doc
 
         print(f"Document '{document_name}' added to collected documents.")
