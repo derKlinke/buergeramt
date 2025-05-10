@@ -4,17 +4,23 @@
 
 # Bürgeramt Adventure: Schenkungssteuer Edition
 
-A text-based adventure game powered by AI that simulates the experience of navigating German bureaucracy to process a gift tax (Schenkungssteuer) application.
+A text-based adventure game powered by AI that simulates the experience of navigating German bureaucracy to process a
+gift tax (Schenkungssteuer) application.
 
 ## Overview
 
-This game puts you in the role of someone trying to navigate the complex German bureaucratic system to process a gift tax application. You'll interact with three distinct AI-powered bureaucrats who will send you back and forth in a maze of forms, requirements, and procedures.
+This game puts you in the role of someone trying to navigate the complex German bureaucratic system to process a gift
+tax application. You'll interact with three distinct AI-powered bureaucrats who will send you back and forth in a maze
+of forms, requirements, and procedures.
 
 ## Characters
 
-- **Herr Schmidt** (Oberamtsrat, Erstbearbeitung): A meticulous rule-follower who speaks in complex legal language and knows every regulation by heart.
-- **Frau Müller** (Sachbearbeiterin, Fachprüfung): Always stressed, rushing, and obsessed with deadlines. Uses many abbreviations and is prone to sending people back to the start.
-- **Herr Weber** (Verwaltungsangestellter, Abschlussstelle): Friendly but powerless. Genuinely wants to help but has no authority, and always suggests solutions that require going elsewhere.
+- **Herr Schmidt** (Oberamtsrat, Erstbearbeitung): A meticulous rule-follower who speaks in complex legal language and
+  knows every regulation by heart.
+- **Frau Müller** (Sachbearbeiterin, Fachprüfung): Always stressed, rushing, and obsessed with deadlines. Uses many
+  abbreviations and is prone to sending people back to the start.
+- **Herr Weber** (Verwaltungsangestellter, Abschlussstelle): Friendly but powerless. Genuinely wants to help but has no
+  authority, and always suggests solutions that require going elsewhere.
 
 ## Game Mechanics
 
@@ -101,4 +107,5 @@ This project is open-source and available under the MIT License.
 
 ---
 
-*Disclaimer: This game is a satirical interpretation of bureaucratic systems and is meant for entertainment purposes only. Any resemblance to actual bureaucratic procedures is simultaneously coincidental and inevitable.*
+*Disclaimer: This game is a satirical interpretation of bureaucratic systems and is meant for entertainment purposes
+only. Any resemblance to actual bureaucratic procedures is simultaneously coincidental and inevitable.*

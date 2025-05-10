@@ -1,6 +1,5 @@
-import pytest
-from buergeramt.rules.loader import get_config
 from buergeramt.rules.game_state import GameState
+from buergeramt.rules.loader import get_config
 
 
 def test_find_win_path():

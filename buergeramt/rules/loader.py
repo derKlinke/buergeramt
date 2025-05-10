@@ -4,8 +4,7 @@ from typing import Dict
 import yaml
 
 from buergeramt.rules.game_config import GameConfig
-from buergeramt.rules.models import (Document, Evidence, PersonaConfig,
-                                     PersonaDefaults)
+from buergeramt.rules.models import Document, Evidence, PersonaConfig, PersonaDefaults
 from buergeramt.rules.persona import Persona
 
 CONFIG_PATH = Path(__file__).parent / "config.yaml"
@@ -61,7 +60,9 @@ def load_config() -> GameConfig:
         for req in doc.requirements:
             # if requirement is not evidence, it must be a document
             if req not in all_evidence_ids and req not in all_doc_ids:
-                raise ValueError(f"Document '{doc.id}' requires '{req}', which is not defined as a document or evidence.")
+                raise ValueError(
+                    f"Document '{doc.id}' requires '{req}', which is not defined as a document or evidence."
+                )
 
     return config
 

@@ -2,9 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from buergeramt.characters.agent_response import AgentResponse
 from buergeramt.characters.bureaucrat import Bureaucrat
-from buergeramt.rules.game_state import GameState
 
 
 class DummyGameState:

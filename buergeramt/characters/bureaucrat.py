@@ -1,8 +1,7 @@
 import os
 
 from dotenv import load_dotenv
-from pydantic_ai import Agent
-from pydantic_ai import Tool
+from pydantic_ai import Agent, Tool
 
 from buergeramt.characters.agent_response import AgentResponse
 from buergeramt.rules.game_state import (

@@ -1,5 +1,3 @@
-import pytest
-
 from buergeramt.rules.loader import get_config
 
 

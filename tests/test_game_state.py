@@ -1,7 +1,5 @@
-import pytest
-from buergeramt.rules.loader import get_config
 from buergeramt.rules.game_state import GameState
-import random
+from buergeramt.rules.loader import get_config
 
 
 def test_add_document_valid_and_duplicate():
@@ -21,11 +19,13 @@ def test_add_document_valid_and_duplicate():
     assert isinstance(added2, str) or added2 is True
     assert list(gs.collected_documents.keys()).count(doc_id) == 1
 
+
 def test_add_document_invalid():
     gs = GameState()
     result = gs.add_document("notarealdoc")
     assert result is not True
     assert "notarealdoc" not in gs.collected_documents
+
 
 def test_add_evidence_valid_forms():
     config = get_config()
@@ -41,6 +41,7 @@ def test_add_evidence_valid_forms():
         assert added is True
         assert gs.evidence_provided[evid_id] == form
 
+
 def test_add_evidence_invalid_evidence_or_form():
     config = get_config()
     gs = GameState()
@@ -51,6 +52,7 @@ def test_add_evidence_invalid_evidence_or_form():
     assert added2 is False
     assert "not_evidence" not in gs.evidence_provided
     assert evid_id not in gs.evidence_provided
+
 
 def test_increase_decrease_frustration_boundaries():
     gs = GameState()
@@ -63,6 +65,7 @@ def test_increase_decrease_frustration_boundaries():
     gs.increase_frustration(2)
     gs.decrease_frustration(1)
     assert gs.frustration_level == 1
+
 
 def test_update_progress_calculation():
     config = get_config()
@@ -79,6 +82,7 @@ def test_update_progress_calculation():
     gs.progress = 99
     gs.update_progress()
     assert gs.progress <= 100
+
 
 def test_get_collected_documents_and_evidence_provided():
     config = get_config()
@@ -98,6 +102,7 @@ def test_get_collected_documents_and_evidence_provided():
     ep = gs.get_evidence_provided()
     assert doc_id in cd
     assert evid_id in ep
+
 
 def test_get_department_documents_and_missing_evidence():
     config = get_config()
@@ -122,6 +127,7 @@ def test_get_department_documents_and_missing_evidence():
     missing = gs.get_missing_evidence()
     assert doc_id not in missing
 
+
 def test_get_bureaucrat_for_department():
     gs = GameState()
     assert isinstance(gs.get_bureaucrat_for_department("Erstbearbeitung"), str)
@@ -129,15 +135,18 @@ def test_get_bureaucrat_for_department():
     assert isinstance(gs.get_bureaucrat_for_department("Abschlussstelle"), str)
     assert isinstance(gs.get_bureaucrat_for_department("KeinAmt"), str)
 
+
 def test_get_formatted_gamestate_json():
     gs = GameState()
     jstr = gs.get_formatted_gamestate()
     import json
+
     obj = json.loads(jstr)
     assert isinstance(obj, dict)
     assert "current_department" in obj
     assert "collected_documents" in obj
     assert "frustration_level" in obj
+
 
 def test_win_by_forced_procedure_and_progress():
     config = get_config()
@@ -145,6 +154,7 @@ def test_win_by_forced_procedure_and_progress():
     doc_graph = {doc_id: set(doc.requirements) for doc_id, doc in config.documents.items()}
     visited = set()
     order = []
+
     def visit(doc_id):
         if doc_id in visited:
             return
@@ -153,6 +163,7 @@ def test_win_by_forced_procedure_and_progress():
                 visit(req)
         order.append(doc_id)
         visited.add(doc_id)
+
     for doc_id in config.documents:
         visit(doc_id)
     # add all except final doc

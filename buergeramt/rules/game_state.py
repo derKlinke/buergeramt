@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from pydantic import BaseModel, Field, PrivateAttr
 from pydantic_ai import RunContext
@@ -39,10 +39,12 @@ class GameState(BaseModel):
             return f"Dokument '{document_name}' ist nicht bekannt."
         doc = docs[document_name]
         # determine missing requirements: evidence and prerequisite documents
-        missing_evidence = [req for req in doc.requirements
-                            if req in self.config.evidence and req not in self.evidence_provided]
-        missing_documents = [req for req in doc.requirements
-                             if req in self.config.documents and req not in self.collected_documents]
+        missing_evidence = [
+            req for req in doc.requirements if req in self.config.evidence and req not in self.evidence_provided
+        ]
+        missing_documents = [
+            req for req in doc.requirements if req in self.config.documents and req not in self.collected_documents
+        ]
         missing_reqs = missing_evidence + missing_documents
         if missing_reqs:
             missing_str = ", ".join(missing_reqs)

@@ -108,7 +108,9 @@ class GameEngine:
 
         # if the active department has changed due to a tool call, transition
         if self.game_state.current_department != self.agent_router.active_bureaucrat.department:
-            self.agent_router.transition_to_department(self.game_state.current_department, print_styled=self._print_styled)
+            self.agent_router.transition_to_department(
+                self.game_state.current_department, print_styled=self._print_styled
+            )
         if self.game_state.attempts % 5 == 0:
             self._print_styled(
                 "\nTipp: Tippen Sie 'hilfe' für Spieltipps oder 'status' für Ihren aktuellen Stand.", "hint"
@@ -130,12 +132,16 @@ class GameEngine:
         if regular_win:
             self.logger.log_win_condition(True, "All main documents acquired: Win!")
         elif frustration_win:
-            self.logger.log_win_condition(True, f"Frustration win: All docs & high frustration ({self.game_state.frustration_level})")
+            self.logger.log_win_condition(
+                True, f"Frustration win: All docs & high frustration ({self.game_state.frustration_level})"
+            )
         else:
             missing = []
             if not has_final_doc:
                 missing.append("Missing final document 'Zahlungsaufforderung'")
-            not_collected = [doc for doc in self.game_state.config.documents if doc not in self.game_state.collected_documents]
+            not_collected = [
+                doc for doc in self.game_state.config.documents if doc not in self.game_state.collected_documents
+            ]
             if not_collected:
                 missing.append("Still missing: " + ", ".join(not_collected))
             self.logger.log_win_condition(False, f"Not met: {', '.join(missing)}")

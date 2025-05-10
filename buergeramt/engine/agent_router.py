@@ -12,7 +12,7 @@ class AgentRouter:
             self.bureaucrats[persona.department] = agent
         self.game_state = game_state
         # always start with the configured starting agent if available
-        starting_agent = getattr(config, 'starting_agent', None)
+        starting_agent = getattr(config, "starting_agent", None)
         if starting_agent and starting_agent in self.bureaucrats:
             self.active_bureaucrat = self.bureaucrats[starting_agent]
         else:
