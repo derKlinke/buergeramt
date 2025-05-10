@@ -117,7 +117,7 @@ class Bureaucrat:
         )
 
         self.logger.logger.info(f"Initialized bureaucrat: {name}, {title} ({department})")
-        print(f"Using {self.agent.model} for {name}")
+        print(f"Using {self.agent.model.model_name} for {name}")
 
     def introduce(self, game_state) -> str:
         deps = GameDeps(game_state=game_state)
